@@ -1,0 +1,336 @@
+{% extends 'base.html' %}
+
+{% block title %}محیط‌ها - Iran Postman{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-gear-wide-connected text-success"></i> محیط‌ها</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newEnvironmentModal">
+        <i class="bi bi-plus"></i> محیط جدید
+    </button>
+</div>
+
+<!-- توضیحات محیط‌ها -->
+<div class="alert alert-success mb-4">
+    <div class="row">
+        <div class="col-md-8">
+            <h5><i class="bi bi-gear-wide-connected"></i> محیط‌ها چیست؟</h5>
+            <p class="mb-2">
+                <strong>محیط‌ها متغیرهای قابل استفاده مجدد هستند</strong> که در URL ها و هدرها استفاده می‌شوند.
+            </p>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>مثال‌های متغیر:</h6>
+                    <ul class="mb-2">
+                        <li><code>BASE_URL</code> = https://api.mysite.com</li>
+                        <li><code>API_KEY</code> = your-secret-key</li>
+                        <li><code>TOKEN</code> = bearer-token</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>نحوه استفاده:</h6>
+                    <ul class="mb-2">
+                        <li>در URL: <code>{{BASE_URL}}/users</code></li>
+                        <li>در Header: <code>{{API_KEY}}</code></li>
+                        <li>تغییر سریع محیط: Dev → Production</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 text-center">
+            <i class="bi bi-gear-wide display-1 text-success opacity-50"></i>
+            <p class="text-muted mt-2">محیط‌های مختلف برای پروژه‌هایتان</p>
+        </div>
+    </div>
+</div>
+
+<!-- لیست محیط‌ها -->
+<div class="row" id="environments-container">
+    <div class="text-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">در حال بارگذاری...</span>
+        </div>
+    </div>
+</div>
+
+<!-- Modal برای محیط جدید/ویرایش -->
+<div class="modal fade" id="newEnvironmentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-title">محیط جدید</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="environment-form">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">نام محیط</label>
+                        <input type="text" class="form-control" id="environment-name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">متغیرها</label>
+                        <div id="variables-container">
+                            <div class="row mb-2 variable-row">
+                                <div class="col-md-5">
+                                    <input type="text" class="form-control variable-key" placeholder="نام متغیر (مثال: BASE_URL)">
+                                </div>
+                                <div class="col-md-5">
+                                    <input type="text" class="form-control variable-value" placeholder="مقدار (مثال: https://api.example.com)">
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-variable">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="add-variable">
+                            <i class="bi bi-plus"></i> افزودن متغیر
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">لغو</button>
+                <button type="button" class="btn btn-primary" id="save-environment">ذخیره</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let editingEnvironmentId = null;
+
+// بارگذاری محیط‌ها
+async function loadEnvironments() {
+    try {
+        const response = await axios.get('/request/api/environments/');
+        const environments = response.data.results;
+        
+        const container = document.getElementById('environments-container');
+        
+        if (environments.length === 0) {
+            container.innerHTML = `
+                <div class="col-12">
+                    <div class="text-center p-5">
+                        <i class="bi bi-gear-wide display-1 text-muted"></i>
+                        <h4 class="mt-3 text-muted">هیچ محیطی یافت نشد</h4>
+                        <p class="text-muted">برای شروع یک محیط جدید ایجاد کنید</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+        
+        let environmentsHTML = '';
+        environments.forEach(env => {
+            const variablesCount = Object.keys(env.variables || {}).length;
+            
+            environmentsHTML += `
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-gear-wide-connected text-success"></i> ${env.name}
+                            </h5>
+                            <div class="btn-group">
+                                <button class="btn btn-outline-secondary btn-sm edit-environment" data-id="${env.id}">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm delete-environment" data-id="${env.id}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-2">${variablesCount} متغیر</p>
+                            <div class="variables-preview">
+                                ${Object.keys(env.variables || {}).slice(0, 3).map(key => 
+                                    `<span class="badge bg-light text-dark me-1 mb-1">${key}</span>`
+                                ).join('')}
+                                ${variablesCount > 3 ? `<span class="text-muted">و ${variablesCount - 3} مورد دیگر...</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <small class="text-muted">آخرین بروزرسانی: ${new Date(env.updated_at).toLocaleDateString('fa-IR')}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = environmentsHTML;
+        
+    } catch (error) {
+        console.error('خطا در بارگذاری محیط‌ها:', error);
+        showAlert('خطا در بارگذاری محیط‌ها', 'danger');
+    }
+}
+
+// افزودن/حذف متغیر
+document.getElementById('add-variable').addEventListener('click', function() {
+    const container = document.getElementById('variables-container');
+    const newRow = document.querySelector('.variable-row').cloneNode(true);
+    newRow.querySelectorAll('input').forEach(input => input.value = '');
+    container.appendChild(newRow);
+});
+
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.remove-variable')) {
+        const variableRows = document.querySelectorAll('.variable-row');
+        if (variableRows.length > 1) {
+            e.target.closest('.variable-row').remove();
+        }
+    }
+});
+
+// ذخیره محیط
+document.getElementById('save-environment').addEventListener('click', async function() {
+    const name = document.getElementById('environment-name').value.trim();
+    
+    if (!name) {
+        showAlert('نام محیط الزامی است', 'warning');
+        return;
+    }
+    
+    // جمع‌آوری متغیرها
+    const variables = {};
+    document.querySelectorAll('.variable-row').forEach(row => {
+        const key = row.querySelector('.variable-key').value.trim();
+        const value = row.querySelector('.variable-value').value.trim();
+        if (key && value) {
+            variables[key] = value;
+        }
+    });
+    
+    try {
+        const data = {
+            name: name,
+            variables: variables
+        };
+        
+        if (editingEnvironmentId) {
+            await axios.put(`/request/api/environments/${editingEnvironmentId}/`, data);
+            showAlert('محیط با موفقیت بروزرسانی شد!', 'success');
+        } else {
+            await axios.post('/request/api/environments/', data);
+            showAlert('محیط با موفقیت ایجاد شد!', 'success');
+        }
+        
+        // پاک کردن فرم و بستن modal
+        resetEnvironmentForm();
+        bootstrap.Modal.getInstance(document.getElementById('newEnvironmentModal')).hide();
+        
+        // بروزرسانی لیست
+        loadEnvironments();
+        
+    } catch (error) {
+        console.error('خطا در ذخیره محیط:', error);
+        showAlert('خطا در ذخیره محیط', 'danger');
+    }
+});
+
+// ویرایش محیط
+document.addEventListener('click', async function(e) {
+    if (e.target.closest('.edit-environment')) {
+        const environmentId = e.target.closest('.edit-environment').dataset.id;
+        
+        try {
+            const response = await axios.get(`/request/api/environments/${environmentId}/`);
+            const env = response.data;
+            
+            editingEnvironmentId = environmentId;
+            document.getElementById('modal-title').textContent = 'ویرایش محیط';
+            document.getElementById('environment-name').value = env.name;
+            
+            // پاک کردن متغیرهای قبلی
+            const container = document.getElementById('variables-container');
+            container.innerHTML = '';
+            
+            // اضافه کردن متغیرها
+            const variables = env.variables || {};
+            if (Object.keys(variables).length === 0) {
+                // اضافه کردن یک ردیف خالی
+                addVariableRow(container);
+            } else {
+                Object.keys(variables).forEach(key => {
+                    addVariableRow(container, key, variables[key]);
+                });
+            }
+            
+            // نمایش modal
+            new bootstrap.Modal(document.getElementById('newEnvironmentModal')).show();
+            
+        } catch (error) {
+            console.error('خطا در بارگذاری محیط:', error);
+            showAlert('خطا در بارگذاری محیط', 'danger');
+        }
+    }
+});
+
+// حذف محیط
+document.addEventListener('click', async function(e) {
+    if (e.target.closest('.delete-environment')) {
+        const environmentId = e.target.closest('.delete-environment').dataset.id;
+        
+        if (!confirm('آیا مطمئن هستید که می‌خواهید این محیط را حذف کنید؟')) {
+            return;
+        }
+        
+        try {
+            await axios.delete(`/request/api/environments/${environmentId}/`);
+            showAlert('محیط با موفقیت حذف شد!', 'success');
+            loadEnvironments();
+        } catch (error) {
+            console.error('خطا در حذف محیط:', error);
+            showAlert('خطا در حذف محیط', 'danger');
+        }
+    }
+});
+
+// تابع کمکی برای اضافه کردن ردیف متغیر
+function addVariableRow(container, key = '', value = '') {
+    const row = document.createElement('div');
+    row.className = 'row mb-2 variable-row';
+    row.innerHTML = `
+        <div class="col-md-5">
+            <input type="text" class="form-control variable-key" placeholder="نام متغیر" value="${key}">
+        </div>
+        <div class="col-md-5">
+            <input type="text" class="form-control variable-value" placeholder="مقدار" value="${value}">
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-outline-danger btn-sm remove-variable">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    `;
+    container.appendChild(row);
+}
+
+// ریست کردن فرم
+function resetEnvironmentForm() {
+    editingEnvironmentId = null;
+    document.getElementById('modal-title').textContent = 'محیط جدید';
+    document.getElementById('environment-form').reset();
+    
+    const container = document.getElementById('variables-container');
+    container.innerHTML = '';
+    addVariableRow(container);
+}
+
+// رویداد بستن modal
+document.getElementById('newEnvironmentModal').addEventListener('hidden.bs.modal', function() {
+    resetEnvironmentForm();
+});
+
+// بارگذاری اولیه
+document.addEventListener('DOMContentLoaded', function() {
+    loadEnvironments();
+});
+</script>
+{% endblock %} 

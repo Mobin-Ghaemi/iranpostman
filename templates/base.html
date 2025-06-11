@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Iran Postman{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        .navbar-brand {
+            font-weight: bold;
+            color: #2c3e50 !important;
+        }
+        .sidebar {
+            min-height: calc(100vh - 56px);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 2px 0;
+        }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+        }
+        .main-content {
+            padding: 20px;
+        }
+        .card {
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 12px;
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 8px;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(45deg, #5a6fd8, #6a4190);
+        }
+        .method-badge {
+            font-weight: bold;
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .method-get { background-color: #28a745; color: white; }
+        .method-post { background-color: #007bff; color: white; }
+        .method-put { background-color: #ffc107; color: black; }
+        .method-delete { background-color: #dc3545; color: white; }
+        .method-patch { background-color: #6f42c1; color: white; }
+        .status-success { color: #28a745; }
+        .status-error { color: #dc3545; }
+        .status-timeout { color: #ffc107; }
+        
+        .request-builder {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .url-input-group {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .response-viewer {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'request:index' %}">
+                <i class="bi bi-lightning-charge-fill"></i>
+                Iran Postman
+            </a>
+            
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">سلام {{ user.username }}</span>
+                <a class="nav-link" href="{% url 'admin:index' %}">
+                    <i class="bi bi-gear"></i> مدیریت
+                </a>
+                <a class="nav-link" href="{% url 'logout' %}">
+                    <i class="bi bi-box-arrow-right"></i> خروج
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar p-0">
+                <div class="p-3">
+                    <nav class="nav flex-column">
+                        <a class="nav-link {% if 'index' in request.resolver_match.url_name %}active{% endif %}" 
+                           href="{% url 'request:index' %}">
+                            <i class="bi bi-house-door"></i> داشبورد
+                        </a>
+                        <a class="nav-link {% if 'collections' in request.resolver_match.url_name %}active{% endif %}" 
+                           href="{% url 'request:collections' %}">
+                            <i class="bi bi-folder"></i> کالکشن‌ها
+                        </a>
+                        <a class="nav-link {% if 'history' in request.resolver_match.url_name %}active{% endif %}" 
+                           href="{% url 'request:history' %}">
+                            <i class="bi bi-clock-history"></i> تاریخچه
+                        </a>
+                        <a class="nav-link {% if 'environments' in request.resolver_match.url_name %}active{% endif %}" 
+                           href="{% url 'request:environments' %}">
+                            <i class="bi bi-gear-wide-connected"></i> محیط‌ها
+                        </a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-10 main-content">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Axios for API calls -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    
+    <script>
+        // تنظیم CSRF token برای درخواست‌های Ajax
+        axios.defaults.headers.common['X-CSRFToken'] = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        
+        // Helper functions
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            const container = document.querySelector('.main-content');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+        
+        function formatResponseTime(time) {
+            if (time < 1) {
+                return (time * 1000).toFixed(0) + ' ms';
+            }
+            return time.toFixed(2) + ' s';
+        }
+        
+        function getMethodBadgeClass(method) {
+            const classes = {
+                'GET': 'method-get',
+                'POST': 'method-post',
+                'PUT': 'method-put',
+                'DELETE': 'method-delete',
+                'PATCH': 'method-patch'
+            };
+            return classes[method] || 'method-get';
+        }
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

@@ -1,0 +1,338 @@
+{% extends 'base.html' %}
+
+{% block title %}تاریخچه - Iran Postman{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-clock-history text-warning"></i> تاریخچه درخواست‌ها</h2>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-danger" id="clear-history">
+            <i class="bi bi-trash"></i> پاک کردن همه
+        </button>
+    </div>
+</div>
+
+<!-- فیلترها -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <label class="form-label">وضعیت:</label>
+                <select class="form-select" id="status-filter">
+                    <option value="">همه</option>
+                    <option value="success">موفق</option>
+                    <option value="error">خطا</option>
+                    <option value="timeout">تایم‌اوت</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">متد:</label>
+                <select class="form-select" id="method-filter">
+                    <option value="">همه</option>
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="DELETE">DELETE</option>
+                    <option value="PATCH">PATCH</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">جستجو در URL:</label>
+                <input type="text" class="form-control" id="url-search" placeholder="URL جستجو کنید...">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button class="btn btn-primary w-100" id="apply-filters">
+                    <i class="bi bi-search"></i> فیلتر
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- لیست تاریخچه -->
+<div class="card">
+    <div class="card-body">
+        <div id="history-container">
+            <div class="text-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">در حال بارگذاری...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal برای جزئیات درخواست -->
+<div class="modal fade" id="historyDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">جزئیات درخواست</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>متد:</strong>
+                        <span id="detail-method" class="badge"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>کد وضعیت:</strong>
+                        <span id="detail-status" class="badge"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>زمان پاسخ:</strong>
+                        <span id="detail-time"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>اندازه:</strong>
+                        <span id="detail-size"></span>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>URL:</strong>
+                    <div class="bg-light p-2 rounded">
+                        <code id="detail-url"></code>
+                    </div>
+                </div>
+                
+                <ul class="nav nav-tabs mb-3">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#detail-request">
+                            درخواست
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#detail-response">
+                            پاسخ
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="detail-request">
+                        <h6>هدرهای درخواست:</h6>
+                        <pre id="detail-request-headers" class="bg-light p-3 rounded"></pre>
+                        <h6>بدنه درخواست:</h6>
+                        <pre id="detail-request-body" class="bg-light p-3 rounded"></pre>
+                    </div>
+                    <div class="tab-pane fade" id="detail-response">
+                        <h6>هدرهای پاسخ:</h6>
+                        <pre id="detail-response-headers" class="bg-light p-3 rounded"></pre>
+                        <h6>بدنه پاسخ:</h6>
+                        <pre id="detail-response-body" class="bg-light p-3 rounded" style="max-height: 400px; overflow-y: auto;"></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-primary" id="save-response-btn">
+                    <i class="bi bi-bookmark"></i> ذخیره پاسخ
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    بستن
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentPage = 1;
+let currentHistoryId = null;
+
+// بارگذاری تاریخچه
+async function loadHistory(page = 1, filters = {}) {
+    try {
+        const params = new URLSearchParams({
+            page: page,
+            ...filters
+        });
+        
+        const response = await axios.get(`/request/api/history/?${params}`);
+        const data = response.data;
+        
+        const container = document.getElementById('history-container');
+        
+        if (data.results.length === 0) {
+            container.innerHTML = '<p class="text-muted text-center">هیچ تاریخچه‌ای یافت نشد</p>';
+            return;
+        }
+        
+        let historyHTML = '';
+        
+        data.results.forEach(item => {
+            const statusClass = item.is_success ? 'success' : 'danger';
+            const methodClass = getMethodBadgeClass(item.method);
+            
+            historyHTML += `
+                <div class="border-bottom py-3 history-item" data-id="${item.id}">
+                    <div class="row align-items-center">
+                        <div class="col-md-1">
+                            <span class="badge ${methodClass}">${item.method}</span>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="d-flex flex-column">
+                                <strong>${item.request_name || 'درخواست سریع'}</strong>
+                                <small class="text-muted text-break">${item.url}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <span class="badge bg-${statusClass}">${item.status_code || 'خطا'}</span>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <small>${formatResponseTime(item.response_time)}</small>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <small class="text-muted">${new Date(item.executed_at).toLocaleString('fa-IR')}</small>
+                            <br>
+                            <button class="btn btn-outline-primary btn-sm mt-1 view-detail" data-id="${item.id}">
+                                <i class="bi bi-eye"></i> جزئیات
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = historyHTML;
+        
+        // نمایش pagination
+        if (data.next || data.previous) {
+            const paginationHTML = `
+                <nav class="mt-3">
+                    <ul class="pagination justify-content-center">
+                        ${data.previous ? `<li class="page-item"><button class="page-link" onclick="loadHistory(${page - 1}, getCurrentFilters())">قبلی</button></li>` : ''}
+                        <li class="page-item active"><span class="page-link">${page}</span></li>
+                        ${data.next ? `<li class="page-item"><button class="page-link" onclick="loadHistory(${page + 1}, getCurrentFilters())">بعدی</button></li>` : ''}
+                    </ul>
+                </nav>
+            `;
+            container.innerHTML += paginationHTML;
+        }
+        
+    } catch (error) {
+        console.error('خطا در بارگذاری تاریخچه:', error);
+        showAlert('خطا در بارگذاری تاریخچه', 'danger');
+    }
+}
+
+// دریافت فیلترهای فعلی
+function getCurrentFilters() {
+    return {
+        status: document.getElementById('status-filter').value,
+        method: document.getElementById('method-filter').value,
+        url: document.getElementById('url-search').value
+    };
+}
+
+// نمایش جزئیات درخواست
+async function showHistoryDetail(historyId) {
+    try {
+        const response = await axios.get(`/request/api/history/${historyId}/`);
+        const item = response.data;
+        currentHistoryId = historyId;
+        
+        // پر کردن modal
+        document.getElementById('detail-method').textContent = item.method;
+        document.getElementById('detail-method').className = `badge ${getMethodBadgeClass(item.method)}`;
+        
+        document.getElementById('detail-status').textContent = item.status_code || 'خطا';
+        document.getElementById('detail-status').className = `badge ${item.is_success ? 'bg-success' : 'bg-danger'}`;
+        
+        document.getElementById('detail-time').textContent = formatResponseTime(item.response_time);
+        document.getElementById('detail-size').textContent = item.response_size ? 
+            (item.response_size + ' بایت') : '-';
+        
+        document.getElementById('detail-url').textContent = item.url;
+        
+        // Request details
+        document.getElementById('detail-request-headers').textContent = 
+            JSON.stringify(item.headers, null, 2);
+        document.getElementById('detail-request-body').textContent = item.body || 'بدنه‌ای ارسال نشده';
+        
+        // Response details
+        document.getElementById('detail-response-headers').textContent = 
+            JSON.stringify(item.response_headers, null, 2);
+        
+        // فرمت کردن پاسخ JSON اگر ممکن باشد
+        try {
+            const jsonData = JSON.parse(item.response_body);
+            document.getElementById('detail-response-body').textContent = 
+                JSON.stringify(jsonData, null, 2);
+        } catch (e) {
+            document.getElementById('detail-response-body').textContent = item.response_body;
+        }
+        
+        // نمایش modal
+        const modal = new bootstrap.Modal(document.getElementById('historyDetailModal'));
+        modal.show();
+        
+    } catch (error) {
+        console.error('خطا در بارگذاری جزئیات:', error);
+        showAlert('خطا در بارگذاری جزئیات', 'danger');
+    }
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    loadHistory();
+});
+
+document.getElementById('apply-filters').addEventListener('click', function() {
+    loadHistory(1, getCurrentFilters());
+});
+
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.view-detail')) {
+        const historyId = e.target.closest('.view-detail').dataset.id;
+        showHistoryDetail(historyId);
+    }
+});
+
+// ذخیره پاسخ
+document.getElementById('save-response-btn').addEventListener('click', async function() {
+    if (!currentHistoryId) return;
+    
+    const name = prompt('نام پاسخ را وارد کنید:');
+    if (!name) return;
+    
+    try {
+        await axios.post('/request/api/saved-responses/', {
+            name: name,
+            history: currentHistoryId,
+            notes: ''
+        });
+        
+        showAlert('پاسخ با موفقیت ذخیره شد!', 'success');
+    } catch (error) {
+        console.error('خطا در ذخیره پاسخ:', error);
+        showAlert('خطا در ذخیره پاسخ', 'danger');
+    }
+});
+
+// پاک کردن تاریخچه
+document.getElementById('clear-history').addEventListener('click', async function() {
+    if (!confirm('آیا مطمئن هستید که می‌خواهید تمام تاریخچه را پاک کنید؟')) {
+        return;
+    }
+    
+    try {
+        // این API باید در backend پیاده‌سازی شود
+        showAlert('این قابلیت در حال توسعه است', 'info');
+    } catch (error) {
+        console.error('خطا در پاک کردن تاریخچه:', error);
+        showAlert('خطا در پاک کردن تاریخچه', 'danger');
+    }
+});
+
+// فیلتر بر اساس تایپ
+document.getElementById('url-search').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        document.getElementById('apply-filters').click();
+    }
+});
+</script>
+{% endblock %} 

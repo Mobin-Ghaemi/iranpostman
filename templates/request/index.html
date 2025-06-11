@@ -1,0 +1,835 @@
+{% extends 'base.html' %}
+
+{% block title %}داشبورد - Iran Postman{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-lightning-charge-fill text-primary"></i> داشبورد</h2>
+</div>
+
+<!-- آمار کلی -->
+<div class="row mb-4" id="stats-row">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-file-earmark-text display-4 text-primary"></i>
+                <h5 class="card-title mt-2">درخواست‌ها</h5>
+                <h3 class="text-primary" id="total-requests">-</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-folder display-4 text-info"></i>
+                <h5 class="card-title mt-2">کالکشن‌ها</h5>
+                <h3 class="text-info" id="total-collections">-</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-clock-history display-4 text-warning"></i>
+                <h5 class="card-title mt-2">تاریخچه</h5>
+                <h3 class="text-warning" id="total-history">-</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-check-circle display-4 text-success"></i>
+                <h5 class="card-title mt-2">موفق</h5>
+                <h3 class="text-success" id="successful-requests">-</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- سازنده درخواست سریع -->
+<div class="request-builder">
+    <h4 class="mb-3"><i class="bi bi-play-circle"></i> درخواست سریع</h4>
+    
+    <form id="quick-request-form">
+        {% csrf_token %}
+        
+        <!-- URL و Method -->
+        <div class="row mb-3">
+            <div class="col-md-2">
+                <select class="form-select" id="method" name="method">
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="PATCH">PATCH</option>
+                    <option value="DELETE">DELETE</option>
+                    <option value="HEAD">HEAD</option>
+                    <option value="OPTIONS">OPTIONS</option>
+                </select>
+            </div>
+            <div class="col-md-8">
+                <input type="url" class="form-control" id="url" name="url" 
+                       placeholder="https://api.example.com/endpoint" required>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100" id="send-btn">
+                    <i class="bi bi-send"></i> ارسال
+                </button>
+            </div>
+        </div>
+        
+        <!-- پیش‌نمایش URL نهایی -->
+        <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">URL نهایی:</small>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="copy-url" title="کپی URL">
+                    <i class="bi bi-clipboard"></i>
+                </button>
+            </div>
+            <div class="bg-light p-2 rounded border">
+                <code id="final-url" class="text-break">URL را وارد کنید...</code>
+            </div>
+        </div>
+
+        <!-- تب‌ها -->
+        <ul class="nav nav-tabs mb-3" id="requestTabs">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#params-tab">
+                    <i class="bi bi-list-ul"></i> پارامترها
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#headers-tab">
+                    <i class="bi bi-tags"></i> هدرها
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#body-tab">
+                    <i class="bi bi-file-text"></i> بدنه
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- پارامترها -->
+            <div class="tab-pane fade show active" id="params-tab">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label mb-0">پارامترهای URL:</label>
+                        <small class="text-muted">این پارامترها به انتهای URL اضافه می‌شوند</small>
+                    </div>
+                    <div id="params-container">
+                        <div class="row mb-2 param-row">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control param-key" placeholder="نام پارامتر (مثال: page)">
+                            </div>
+                            <div class="col-md-6">
+                                <input type="text" class="form-control param-value" placeholder="مقدار (مثال: 1)">
+                            </div>
+                            <div class="col-md-1">
+                                <div class="form-check">
+                                    <input class="form-check-input param-enabled" type="checkbox" checked title="فعال/غیرفعال">
+                                </div>
+                            </div>
+                            <div class="col-md-1">
+                                <button type="button" class="btn btn-outline-danger btn-sm remove-param" title="حذف پارامتر">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="add-param">
+                        <i class="bi bi-plus"></i> افزودن پارامتر
+                    </button>
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> 
+                            پارامترهای غیرفعال به URL اضافه نمی‌شوند. URL نهایی در بالا نمایش داده می‌شود.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- هدرها -->
+            <div class="tab-pane fade" id="headers-tab">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label mb-0">هدرهای درخواست:</label>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-plus-square"></i> هدرهای رایج
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item common-header" data-key="Content-Type" data-value="application/json">Content-Type: application/json</a></li>
+                                <li><a class="dropdown-item common-header" data-key="Content-Type" data-value="application/x-www-form-urlencoded">Content-Type: form-urlencoded</a></li>
+                                <li><a class="dropdown-item common-header" data-key="Content-Type" data-value="multipart/form-data">Content-Type: multipart/form-data</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item common-header" data-key="Authorization" data-value="Bearer ">Authorization: Bearer Token</a></li>
+                                <li><a class="dropdown-item common-header" data-key="Authorization" data-value="Basic ">Authorization: Basic Auth</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item common-header" data-key="Accept" data-value="application/json">Accept: application/json</a></li>
+                                <li><a class="dropdown-item common-header" data-key="User-Agent" data-value="Iran-Postman/1.0">User-Agent: Iran-Postman</a></li>
+                                <li><a class="dropdown-item common-header" data-key="X-Requested-With" data-value="XMLHttpRequest">X-Requested-With: XMLHttpRequest</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div id="headers-container">
+                        <div class="row mb-2 header-row">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control header-key" placeholder="نام هدر (مثال: Content-Type)" list="header-suggestions">
+                                <datalist id="header-suggestions">
+                                    <option value="Content-Type">
+                                    <option value="Authorization">
+                                    <option value="Accept">
+                                    <option value="User-Agent">
+                                    <option value="X-API-Key">
+                                    <option value="X-Requested-With">
+                                    <option value="Cache-Control">
+                                    <option value="Accept-Language">
+                                </datalist>
+                            </div>
+                            <div class="col-md-6">
+                                <input type="text" class="form-control header-value" placeholder="مقدار هدر (مثال: application/json)">
+                            </div>
+                            <div class="col-md-1">
+                                <div class="form-check">
+                                    <input class="form-check-input header-enabled" type="checkbox" checked title="فعال/غیرفعال">
+                                </div>
+                            </div>
+                            <div class="col-md-1">
+                                <button type="button" class="btn btn-outline-danger btn-sm remove-header" title="حذف هدر">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="add-header">
+                        <i class="bi bi-plus"></i> افزودن هدر
+                    </button>
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> 
+                            هدرهای غیرفعال ارسال نمی‌شوند. از چک‌باکس کنار هر هدر برای فعال/غیرفعال کردن استفاده کنید.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- بدنه -->
+            <div class="tab-pane fade" id="body-tab">
+                <div class="mb-3">
+                    <label class="form-label">نوع بدنه:</label>
+                    <select class="form-select" id="body-type" name="body_type">
+                        <option value="none">هیچ</option>
+                        <option value="raw">متن خام (Raw)</option>
+                        <option value="form-data">Form Data</option>
+                        <option value="x-www-form-urlencoded">URL Encoded</option>
+                    </select>
+                </div>
+                
+                <div id="body-content">
+                    <div id="body-raw-section" style="display: none;">
+                        <div class="mb-2 d-flex justify-content-between align-items-center">
+                            <label class="form-label mb-0">محتوای درخواست:</label>
+                            <div class="btn-group" role="group">
+                                <input type="radio" class="btn-check" name="raw-type" id="raw-text" value="text" checked>
+                                <label class="btn btn-outline-secondary btn-sm" for="raw-text">Text</label>
+                                
+                                <input type="radio" class="btn-check" name="raw-type" id="raw-json" value="json">
+                                <label class="btn btn-outline-secondary btn-sm" for="raw-json">JSON</label>
+                                
+                                <input type="radio" class="btn-check" name="raw-type" id="raw-xml" value="xml">
+                                <label class="btn btn-outline-secondary btn-sm" for="raw-xml">XML</label>
+                                
+                                <input type="radio" class="btn-check" name="raw-type" id="raw-html" value="html">
+                                <label class="btn btn-outline-secondary btn-sm" for="raw-html">HTML</label>
+                            </div>
+                        </div>
+                        <textarea class="form-control font-monospace" id="body-raw" rows="12" 
+                                  placeholder="محتوای درخواست را اینجا وارد کنید..." style="resize: vertical;"></textarea>
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-outline-info btn-sm" id="format-json">
+                                <i class="bi bi-code"></i> فرمت JSON
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="minify-json">
+                                <i class="bi bi-arrows-collapse"></i> فشرده‌سازی
+                            </button>
+                            <small class="text-muted ms-3">تعداد کاراکتر: <span id="char-count">0</span></small>
+                        </div>
+                    </div>
+                    
+                    <div id="body-form-data-section" style="display: none;">
+                        <div class="mb-3">
+                            <label class="form-label">داده‌های فرم:</label>
+                            <div id="form-data-container">
+                                <div class="row mb-2 form-data-row">
+                                    <div class="col-md-4">
+                                        <input type="text" class="form-control form-data-key" placeholder="نام فیلد">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <select class="form-select form-data-type">
+                                            <option value="text">Text</option>
+                                            <option value="file">File</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="text" class="form-control form-data-value" placeholder="مقدار">
+                                        <input type="file" class="form-control form-data-file" style="display: none;">
+                                    </div>
+                                    <div class="col-md-1">
+                                        <div class="form-check">
+                                            <input class="form-check-input form-data-enabled" type="checkbox" checked>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-1">
+                                        <button type="button" class="btn btn-outline-danger btn-sm remove-form-data">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="add-form-data">
+                                <i class="bi bi-plus"></i> افزودن فیلد
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="body-urlencoded-section" style="display: none;">
+                        <div class="mb-3">
+                            <label class="form-label">داده‌های URL Encoded:</label>
+                            <div id="urlencoded-container">
+                                <div class="row mb-2 urlencoded-row">
+                                    <div class="col-md-5">
+                                        <input type="text" class="form-control urlencoded-key" placeholder="نام پارامتر">
+                                    </div>
+                                    <div class="col-md-5">
+                                        <input type="text" class="form-control urlencoded-value" placeholder="مقدار">
+                                    </div>
+                                    <div class="col-md-1">
+                                        <div class="form-check">
+                                            <input class="form-check-input urlencoded-enabled" type="checkbox" checked>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-1">
+                                        <button type="button" class="btn btn-outline-danger btn-sm remove-urlencoded">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="add-urlencoded">
+                                <i class="bi bi-plus"></i> افزودن پارامتر
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="body-none-section">
+                        <p class="text-muted text-center p-4">
+                            <i class="bi bi-info-circle"></i> هیچ بدنه‌ای برای این درخواست انتخاب نشده است.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- نمایش پاسخ -->
+<div id="response-section" style="display: none;">
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="bi bi-arrow-down-circle"></i> پاسخ</h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <strong>کد وضعیت:</strong>
+                    <span id="response-status" class="badge"></span>
+                </div>
+                <div class="col-md-3">
+                    <strong>زمان پاسخ:</strong>
+                    <span id="response-time"></span>
+                </div>
+                <div class="col-md-3">
+                    <strong>اندازه:</strong>
+                    <span id="response-size"></span>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-outline-primary btn-sm" id="save-response">
+                        <i class="bi bi-bookmark"></i> ذخیره پاسخ
+                    </button>
+                </div>
+            </div>
+            
+            <ul class="nav nav-tabs mb-3">
+                <li class="nav-item">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#response-body">
+                        بدنه پاسخ
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#response-headers">
+                        هدرهای پاسخ
+                    </button>
+                </li>
+            </ul>
+            
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="response-body">
+                    <pre id="response-body-content" class="bg-light p-3 rounded"></pre>
+                </div>
+                <div class="tab-pane fade" id="response-headers">
+                    <pre id="response-headers-content" class="bg-light p-3 rounded"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- تاریخچه اخیر -->
+<div class="card mt-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5><i class="bi bi-clock-history"></i> تاریخچه اخیر</h5>
+        <a href="{% url 'request:history' %}" class="btn btn-outline-primary btn-sm">
+            مشاهده همه
+        </a>
+    </div>
+    <div class="card-body">
+        <div id="recent-history">
+            <div class="text-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">در حال بارگذاری...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentHistoryId = null;
+
+// بارگذاری آمار داشبورد
+async function loadDashboardStats() {
+    try {
+        const response = await axios.get('/request/api/dashboard-stats/');
+        const stats = response.data;
+        
+        document.getElementById('total-requests').textContent = stats.total_requests;
+        document.getElementById('total-collections').textContent = stats.total_collections;
+        document.getElementById('total-history').textContent = stats.total_history;
+        document.getElementById('successful-requests').textContent = stats.successful_requests;
+        
+        // نمایش تاریخچه اخیر
+        const recentHistory = document.getElementById('recent-history');
+        if (stats.recent_requests.length === 0) {
+            recentHistory.innerHTML = '<p class="text-muted text-center">هیچ تاریخچه‌ای یافت نشد</p>';
+        } else {
+            recentHistory.innerHTML = stats.recent_requests.map(item => `
+                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                    <div>
+                        <span class="badge ${getMethodBadgeClass(item.method)} me-2">${item.method}</span>
+                        <strong>${item.request_name || 'درخواست سریع'}</strong>
+                        <br>
+                        <small class="text-muted">${item.url}</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge ${item.is_success ? 'bg-success' : 'bg-danger'}">${item.status_code || 'خطا'}</span>
+                        <br>
+                        <small class="text-muted">${new Date(item.executed_at).toLocaleString('fa-IR')}</small>
+                    </div>
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        console.error('خطا در بارگذاری آمار:', error);
+    }
+}
+
+// افزودن/حذف پارامتر
+document.getElementById('add-param').addEventListener('click', function() {
+    const container = document.getElementById('params-container');
+    const newRow = document.querySelector('.param-row').cloneNode(true);
+    newRow.querySelectorAll('input').forEach(input => input.value = '');
+    container.appendChild(newRow);
+});
+
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.remove-param')) {
+        const paramRows = document.querySelectorAll('.param-row');
+        if (paramRows.length > 1) {
+            e.target.closest('.param-row').remove();
+        }
+    }
+});
+
+// افزودن/حذف هدر
+document.getElementById('add-header').addEventListener('click', function() {
+    const container = document.getElementById('headers-container');
+    const newRow = document.querySelector('.header-row').cloneNode(true);
+    newRow.querySelectorAll('input').forEach(input => input.value = '');
+    container.appendChild(newRow);
+});
+
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.remove-header')) {
+        const headerRows = document.querySelectorAll('.header-row');
+        if (headerRows.length > 1) {
+            e.target.closest('.header-row').remove();
+        }
+    }
+});
+
+// تغییر نوع بدنه
+document.getElementById('body-type').addEventListener('change', function() {
+    const bodyType = this.value;
+    
+    // مخفی کردن همه بخش‌ها
+    document.getElementById('body-none-section').style.display = 'none';
+    document.getElementById('body-raw-section').style.display = 'none';
+    document.getElementById('body-form-data-section').style.display = 'none';
+    document.getElementById('body-urlencoded-section').style.display = 'none';
+    
+    // نمایش بخش مربوطه
+    if (bodyType === 'none') {
+        document.getElementById('body-none-section').style.display = 'block';
+    } else if (bodyType === 'raw') {
+        document.getElementById('body-raw-section').style.display = 'block';
+        updateCharCount();
+    } else if (bodyType === 'form-data') {
+        document.getElementById('body-form-data-section').style.display = 'block';
+    } else if (bodyType === 'x-www-form-urlencoded') {
+        document.getElementById('body-urlencoded-section').style.display = 'block';
+    }
+});
+
+// شمارش کاراکتر در Raw Body
+function updateCharCount() {
+    const textarea = document.getElementById('body-raw');
+    const counter = document.getElementById('char-count');
+    if (textarea && counter) {
+        counter.textContent = textarea.value.length;
+    }
+}
+
+// Event listener برای شمارش کاراکتر
+document.addEventListener('input', function(e) {
+    if (e.target.id === 'body-raw') {
+        updateCharCount();
+    }
+});
+
+// فرمت کردن JSON
+document.addEventListener('click', function(e) {
+    if (e.target.closest('#format-json')) {
+        const textarea = document.getElementById('body-raw');
+        try {
+            const jsonData = JSON.parse(textarea.value);
+            textarea.value = JSON.stringify(jsonData, null, 2);
+            updateCharCount();
+            showAlert('JSON با موفقیت فرمت شد!', 'success');
+        } catch (error) {
+            showAlert('فرمت JSON نامعتبر است!', 'warning');
+        }
+    }
+    
+    if (e.target.closest('#minify-json')) {
+        const textarea = document.getElementById('body-raw');
+        try {
+            const jsonData = JSON.parse(textarea.value);
+            textarea.value = JSON.stringify(jsonData);
+            updateCharCount();
+            showAlert('JSON فشرده‌سازی شد!', 'success');
+        } catch (error) {
+            showAlert('فرمت JSON نامعتبر است!', 'warning');
+        }
+    }
+});
+
+// افزودن هدر رایج
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.common-header')) {
+        e.preventDefault();
+        const key = e.target.closest('.common-header').dataset.key;
+        const value = e.target.closest('.common-header').dataset.value;
+        
+        // پیدا کردن اولین ردیف خالی یا اضافه کردن ردیف جدید
+        const headerRows = document.querySelectorAll('.header-row');
+        let emptyRow = null;
+        
+        for (let row of headerRows) {
+            const keyInput = row.querySelector('.header-key');
+            const valueInput = row.querySelector('.header-value');
+            if (!keyInput.value.trim() && !valueInput.value.trim()) {
+                emptyRow = row;
+                break;
+            }
+        }
+        
+        if (!emptyRow) {
+            document.getElementById('add-header').click();
+            emptyRow = document.querySelector('.header-row:last-child');
+        }
+        
+        emptyRow.querySelector('.header-key').value = key;
+        emptyRow.querySelector('.header-value').value = value;
+        emptyRow.querySelector('.header-enabled').checked = true;
+    }
+});
+
+// مدیریت Form Data Type
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('form-data-type')) {
+        const row = e.target.closest('.form-data-row');
+        const textInput = row.querySelector('.form-data-value');
+        const fileInput = row.querySelector('.form-data-file');
+        
+        if (e.target.value === 'file') {
+            textInput.style.display = 'none';
+            fileInput.style.display = 'block';
+        } else {
+            textInput.style.display = 'block';
+            fileInput.style.display = 'none';
+        }
+    }
+});
+
+// افزودن Form Data
+document.getElementById('add-form-data').addEventListener('click', function() {
+    const container = document.getElementById('form-data-container');
+    const newRow = document.querySelector('.form-data-row').cloneNode(true);
+    newRow.querySelectorAll('input').forEach(input => {
+        if (input.type !== 'checkbox') {
+            input.value = '';
+        } else {
+            input.checked = true;
+        }
+    });
+    newRow.querySelector('.form-data-type').value = 'text';
+    newRow.querySelector('.form-data-value').style.display = 'block';
+    newRow.querySelector('.form-data-file').style.display = 'none';
+    container.appendChild(newRow);
+});
+
+// حذف Form Data
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.remove-form-data')) {
+        const formDataRows = document.querySelectorAll('.form-data-row');
+        if (formDataRows.length > 1) {
+            e.target.closest('.form-data-row').remove();
+        }
+    }
+});
+
+// افزودن URL Encoded
+document.getElementById('add-urlencoded').addEventListener('click', function() {
+    const container = document.getElementById('urlencoded-container');
+    const newRow = document.querySelector('.urlencoded-row').cloneNode(true);
+    newRow.querySelectorAll('input').forEach(input => {
+        if (input.type !== 'checkbox') {
+            input.value = '';
+        } else {
+            input.checked = true;
+        }
+    });
+    container.appendChild(newRow);
+});
+
+// حذف URL Encoded
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.remove-urlencoded')) {
+        const urlencodedRows = document.querySelectorAll('.urlencoded-row');
+        if (urlencodedRows.length > 1) {
+            e.target.closest('.urlencoded-row').remove();
+        }
+    }
+});
+
+// ارسال درخواست سریع
+document.getElementById('quick-request-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const sendBtn = document.getElementById('send-btn');
+    const originalText = sendBtn.innerHTML;
+    sendBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> در حال ارسال...';
+    sendBtn.disabled = true;
+    
+    try {
+        // جمع‌آوری داده‌ها
+        const params = {};
+        document.querySelectorAll('.param-row').forEach(row => {
+            const key = row.querySelector('.param-key').value.trim();
+            const value = row.querySelector('.param-value').value.trim();
+            const enabled = row.querySelector('.param-enabled').checked;
+            if (key && value && enabled) {
+                params[key] = value;
+            }
+        });
+        
+        const headers = {};
+        document.querySelectorAll('.header-row').forEach(row => {
+            const key = row.querySelector('.header-key').value.trim();
+            const value = row.querySelector('.header-value').value.trim();
+            const enabled = row.querySelector('.header-enabled').checked;
+            if (key && value && enabled) {
+                headers[key] = value;
+            }
+        });
+        
+        const bodyType = document.getElementById('body-type').value;
+        let bodyData = '';
+        let formData = {};
+        let urlencodedData = {};
+        
+        if (bodyType === 'raw') {
+            bodyData = document.getElementById('body-raw')?.value || '';
+        } else if (bodyType === 'form-data') {
+            document.querySelectorAll('.form-data-row').forEach(row => {
+                const key = row.querySelector('.form-data-key').value.trim();
+                const enabled = row.querySelector('.form-data-enabled').checked;
+                const type = row.querySelector('.form-data-type').value;
+                
+                if (key && enabled) {
+                    if (type === 'text') {
+                        const value = row.querySelector('.form-data-value').value.trim();
+                        if (value) formData[key] = value;
+                    } else if (type === 'file') {
+                        const fileInput = row.querySelector('.form-data-file');
+                        if (fileInput.files.length > 0) {
+                            formData[key] = fileInput.files[0].name; // فعلاً فقط نام فایل
+                        }
+                    }
+                }
+            });
+        } else if (bodyType === 'x-www-form-urlencoded') {
+            document.querySelectorAll('.urlencoded-row').forEach(row => {
+                const key = row.querySelector('.urlencoded-key').value.trim();
+                const value = row.querySelector('.urlencoded-value').value.trim();
+                const enabled = row.querySelector('.urlencoded-enabled').checked;
+                if (key && value && enabled) {
+                    urlencodedData[key] = value;
+                }
+            });
+        }
+        
+        const requestData = {
+            method: document.getElementById('method').value,
+            url: document.getElementById('url').value,
+            params: params,
+            headers: headers,
+            body_type: bodyType,
+            body_raw: bodyData,
+            body_form_data: formData,
+            body_urlencoded: urlencodedData
+        };
+        
+        const response = await axios.post('/request/api/quick-request/', requestData);
+        const result = response.data;
+        currentHistoryId = result.id;
+        
+        // نمایش پاسخ
+        displayResponse(result);
+        showAlert('درخواست با موفقیت ارسال شد!', 'success');
+        
+        // بروزرسانی آمار
+        loadDashboardStats();
+        
+    } catch (error) {
+        console.error('خطا در ارسال درخواست:', error);
+        showAlert('خطا در ارسال درخواست: ' + (error.response?.data?.error || error.message), 'danger');
+    } finally {
+        sendBtn.innerHTML = originalText;
+        sendBtn.disabled = false;
+    }
+});
+
+// نمایش پاسخ
+function displayResponse(result) {
+    document.getElementById('response-section').style.display = 'block';
+    
+    // وضعیت
+    const statusBadge = document.getElementById('response-status');
+    statusBadge.textContent = result.status_code || 'خطا';
+    statusBadge.className = `badge ${result.is_success ? 'bg-success' : 'bg-danger'}`;
+    
+    // زمان و اندازه
+    document.getElementById('response-time').textContent = formatResponseTime(result.response_time);
+    document.getElementById('response-size').textContent = result.response_size ? 
+        (result.response_size + ' بایت') : '-';
+    
+    // بدنه پاسخ
+    try {
+        const jsonData = JSON.parse(result.response_body);
+        document.getElementById('response-body-content').textContent = 
+            JSON.stringify(jsonData, null, 2);
+    } catch (e) {
+        document.getElementById('response-body-content').textContent = result.response_body;
+    }
+    
+    // هدرهای پاسخ
+    document.getElementById('response-headers-content').textContent = 
+        JSON.stringify(result.response_headers, null, 2);
+}
+
+// بارگذاری اولیه
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardStats();
+});
+
+// بروزرسانی URL پیش‌نمایش
+function updateUrlPreview() {
+    const baseUrl = document.getElementById('url').value.trim();
+    const finalUrlElement = document.getElementById('final-url');
+    
+    if (!baseUrl) {
+        finalUrlElement.textContent = 'URL را وارد کنید...';
+        return;
+    }
+    
+    // جمع‌آوری پارامترهای فعال
+    const params = [];
+    document.querySelectorAll('.param-row').forEach(row => {
+        const key = row.querySelector('.param-key').value.trim();
+        const value = row.querySelector('.param-value').value.trim();
+        const enabled = row.querySelector('.param-enabled').checked;
+        if (key && value && enabled) {
+            params.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
+        }
+    });
+    
+    let finalUrl = baseUrl;
+    if (params.length > 0) {
+        const separator = baseUrl.includes('?') ? '&' : '?';
+        finalUrl += separator + params.join('&');
+    }
+    
+    finalUrlElement.textContent = finalUrl;
+}
+
+// کپی کردن URL
+document.getElementById('copy-url').addEventListener('click', function() {
+    const finalUrl = document.getElementById('final-url').textContent;
+    if (finalUrl && finalUrl !== 'URL را وارد کنید...') {
+        navigator.clipboard.writeText(finalUrl).then(() => {
+            showAlert('URL کپی شد!', 'success');
+        }).catch(() => {
+            showAlert('خطا در کپی کردن URL', 'danger');
+        });
+    }
+});
+
+// Event listeners برای بروزرسانی URL
+document.getElementById('url').addEventListener('input', updateUrlPreview);
+document.addEventListener('input', function(e) {
+    if (e.target.classList.contains('param-key') || e.target.classList.contains('param-value')) {
+        updateUrlPreview();
+    }
+});
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('param-enabled')) {
+        updateUrlPreview();
+    }
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block title %}کالکشن‌ها - Iran Postman{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-folder text-info"></i> کالکشن‌ها</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newCollectionModal">
+        <i class="bi bi-plus"></i> کالکشن جدید
+    </button>
+</div>
+
+<!-- توضیحات کالکشن‌ها -->
+<div class="alert alert-info mb-4">
+    <div class="row">
+        <div class="col-md-8">
+            <h5><i class="bi bi-info-circle"></i> کالکشن‌ها چیست؟</h5>
+            <p class="mb-2">
+                <strong>کالکشن‌ها مثل پوشه‌هایی هستند</strong> که درخواست‌های مرتبط را کنار هم نگه می‌دارند.
+            </p>
+            <ul class="mb-0">
+                <li><strong>سازماندهی:</strong> درخواست‌های مربوط به یک پروژه را در یک کالکشن قرار دهید</li>
+                <li><strong>مثال:</strong> کالکشن "مدیریت کاربران" شامل Login، Register، Profile و غیره</li>
+                <li><strong>اشتراک‌گذاری:</strong> کالکشن‌ها را با تیم خود به اشتراک بگذارید</li>
+            </ul>
+        </div>
+        <div class="col-md-4 text-center">
+            <i class="bi bi-folder-plus display-1 text-info opacity-50"></i>
+            <p class="text-muted mt-2">برای شروع یک کالکشن جدید ایجاد کنید</p>
+        </div>
+    </div>
+</div>
+
+<!-- لیست کالکشن‌ها -->
+<div class="row" id="collections-container">
+    <div class="text-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">در حال بارگذاری...</span>
+        </div>
+    </div>
+</div>
+
+<!-- Modal برای کالکشن جدید -->
+<div class="modal fade" id="newCollectionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">کالکشن جدید</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="new-collection-form">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">نام کالکشن</label>
+                        <input type="text" class="form-control" id="collection-name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">توضیحات</label>
+                        <textarea class="form-control" id="collection-description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">لغو</button>
+                <button type="button" class="btn btn-primary" id="save-collection">ذخیره</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// بارگذاری کالکشن‌ها
+async function loadCollections() {
+    try {
+        const response = await axios.get('/request/api/collections/');
+        const collections = response.data.results;
+        
+        const container = document.getElementById('collections-container');
+        
+        if (collections.length === 0) {
+            container.innerHTML = `
+                <div class="col-12">
+                    <div class="text-center p-5">
+                        <i class="bi bi-folder-x display-1 text-muted"></i>
+                        <h4 class="mt-3 text-muted">هیچ کالکشنی یافت نشد</h4>
+                        <p class="text-muted">برای شروع یک کالکشن جدید ایجاد کنید</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+        
+        let collectionsHTML = '';
+        collections.forEach(collection => {
+            collectionsHTML += `
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="bi bi-folder"></i> ${collection.name}
+                            </h5>
+                            <p class="card-text">${collection.description || 'بدون توضیحات'}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">${collection.requests_count} درخواست</small>
+                                <div class="btn-group">
+                                    <button class="btn btn-outline-primary btn-sm view-collection" data-id="${collection.id}">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm edit-collection" data-id="${collection.id}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm delete-collection" data-id="${collection.id}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <small class="text-muted">آخرین بروزرسانی: ${new Date(collection.updated_at).toLocaleDateString('fa-IR')}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = collectionsHTML;
+        
+    } catch (error) {
+        console.error('خطا در بارگذاری کالکشن‌ها:', error);
+        showAlert('خطا در بارگذاری کالکشن‌ها', 'danger');
+    }
+}
+
+// ذخیره کالکشن جدید
+document.getElementById('save-collection').addEventListener('click', async function() {
+    const name = document.getElementById('collection-name').value.trim();
+    const description = document.getElementById('collection-description').value.trim();
+    
+    if (!name) {
+        showAlert('نام کالکشن الزامی است', 'warning');
+        return;
+    }
+    
+    try {
+        await axios.post('/request/api/collections/', {
+            name: name,
+            description: description
+        });
+        
+        showAlert('کالکشن با موفقیت ایجاد شد!', 'success');
+        
+        // پاک کردن فرم و بستن modal
+        document.getElementById('new-collection-form').reset();
+        bootstrap.Modal.getInstance(document.getElementById('newCollectionModal')).hide();
+        
+        // بروزرسانی لیست
+        loadCollections();
+        
+    } catch (error) {
+        console.error('خطا در ایجاد کالکشن:', error);
+        showAlert('خطا در ایجاد کالکشن', 'danger');
+    }
+});
+
+// حذف کالکشن
+document.addEventListener('click', async function(e) {
+    if (e.target.closest('.delete-collection')) {
+        const collectionId = e.target.closest('.delete-collection').dataset.id;
+        
+        if (!confirm('آیا مطمئن هستید که می‌خواهید این کالکشن را حذف کنید؟')) {
+            return;
+        }
+        
+        try {
+            await axios.delete(`/request/api/collections/${collectionId}/`);
+            showAlert('کالکشن با موفقیت حذف شد!', 'success');
+            loadCollections();
+        } catch (error) {
+            console.error('خطا در حذف کالکشن:', error);
+            showAlert('خطا در حذف کالکشن', 'danger');
+        }
+    }
+});
+
+// بارگذاری اولیه
+document.addEventListener('DOMContentLoaded', function() {
+    loadCollections();
+});
+</script>
+{% endblock %} 
