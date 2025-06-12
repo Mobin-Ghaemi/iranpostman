@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
@@ -193,6 +193,7 @@ class SavedResponseViewSet(viewsets.ModelViewSet):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def quick_request(request):
     """اجرای درخواست سریع بدون ذخیره - بدون نیاز به لاگین"""
     serializer = QuickRequestSerializer(data=request.data, context={'request': request})
@@ -214,6 +215,7 @@ def quick_request(request):
 
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def dashboard_stats(request):
     """آمار داشبورد - بدون نیاز به لاگین"""
     if request.user.is_authenticated:
@@ -328,3 +330,15 @@ def custom_login(request):
         redirect_authenticated_user=True,
         next_page='request:index'
     )(request)
+
+
+def custom_logout(request):
+    """صفحه خروج سفارشی که GET و POST را می‌پذیرد"""
+    if request.method == 'POST' or request.method == 'GET':
+        if request.user.is_authenticated:
+            from django.contrib.auth import logout
+            logout(request)
+            messages.success(request, 'با موفقیت خارج شدید!')
+        return redirect('request:index')
+    
+    return redirect('request:index')

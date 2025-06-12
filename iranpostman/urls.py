@@ -20,7 +20,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
 from django.shortcuts import redirect
-from request.views import signup, custom_login
+from request.views import signup, custom_login, custom_logout
 
 def home_redirect(request):
     """ریدایرکت به صفحه اصلی"""
@@ -34,7 +34,7 @@ urlpatterns = [
     # Authentication URLs
     path('login/', custom_login, name='login'),
     path('signup/', signup, name='signup'),
-    path('logout/', auth_views.LogoutView.as_view(next_page='request:index'), name='logout'),
+    path('logout/', custom_logout, name='logout'),
 ]
 
 # Static files در حالت دولوپمنت

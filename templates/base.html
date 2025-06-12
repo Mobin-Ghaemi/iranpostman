@@ -440,11 +440,6 @@
         }
         
         setTimeout(testNavButtons, 1000);
-        
-        // تست نوتیفیکیشن اولیه
-        setTimeout(() => {
-            showAlert('سیستم navigation آماده است! ✅', 'success', 3000);
-        }, 2000);
     });
     </script>
 
@@ -510,7 +505,10 @@
                         </a>
                         
                         {% if user.is_authenticated %}
-
+                            <a class="nav-link {% if 'collections' in request.resolver_match.url_name %}active{% endif %}" 
+                               href="{% url 'request:collections' %}">
+                                <i class="bi bi-folder"></i> کالکشن‌ها
+                            </a>
                             <a class="nav-link {% if 'history' in request.resolver_match.url_name %}active{% endif %}" 
                                href="{% url 'request:history' %}">
                                 <i class="bi bi-clock-history"></i> تاریخچه

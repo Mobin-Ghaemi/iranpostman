@@ -53,11 +53,48 @@
 <div class="card">
     <div class="card-body">
         <div id="history-container">
-            <div class="text-center">
-                <div class="spinner-border" role="status">
-                    <span class="visually-hidden">در حال بارگذاری...</span>
-                </div>
-            </div>
+            {% if history %}
+                {% for item in history %}
+                    <div class="border-bottom py-3 history-item" data-id="{{ item.id }}">
+                        <div class="row align-items-center">
+                            <div class="col-md-1">
+                                <span class="badge method-{{ item.method|lower }}">{{ item.method }}</span>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="d-flex flex-column">
+                                    <strong>{{ item.request_name|default:"درخواست سریع" }}</strong>
+                                    <small class="text-muted text-break">{{ item.url }}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2 text-center">
+                                <span class="badge {% if item.is_success %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ item.status_code|default:"خطا" }}
+                                </span>
+                            </div>
+                            <div class="col-md-2 text-center">
+                                <small>{{ item.response_time|default:"0" }} میلی‌ثانیه</small>
+                            </div>
+                            <div class="col-md-2 text-center">
+                                <small class="text-muted">{{ item.executed_at|date:"Y/m/d H:i:s" }}</small>
+                                <br>
+                                <div class="btn-group mt-1" role="group">
+                                    <button class="btn btn-outline-primary btn-sm view-detail" data-id="{{ item.id }}" title="جزئیات">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="btn btn-outline-success btn-sm re-execute" data-id="{{ item.id }}" title="اجرای مجدد">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm delete-history" data-id="{{ item.id }}" title="حذف">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted text-center">هیچ تاریخچه‌ای یافت نشد</p>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -140,100 +177,27 @@
 
 {% block extra_js %}
 <script>
-let currentPage = 1;
 let currentHistoryId = null;
 
-// بارگذاری تاریخچه
-async function loadHistory(page = 1, filters = {}) {
-    try {
-        const params = new URLSearchParams({
-            page: page,
-            ...filters
-        });
-        
-        const response = await axios.get(`/request/api/history/?${params}`);
-        const data = response.data;
-        
-        const container = document.getElementById('history-container');
-        
-        if (data.results.length === 0) {
-            container.innerHTML = '<p class="text-muted text-center">هیچ تاریخچه‌ای یافت نشد</p>';
-            return;
-        }
-        
-        let historyHTML = '';
-        
-        data.results.forEach(item => {
-            const statusClass = item.is_success ? 'success' : 'danger';
-            const methodClass = getMethodBadgeClass(item.method);
-            
-            historyHTML += `
-                <div class="border-bottom py-3 history-item" data-id="${item.id}">
-                    <div class="row align-items-center">
-                        <div class="col-md-1">
-                            <span class="badge ${methodClass}">${item.method}</span>
-                        </div>
-                        <div class="col-md-5">
-                            <div class="d-flex flex-column">
-                                <strong>${item.request_name || 'درخواست سریع'}</strong>
-                                <small class="text-muted text-break">${item.url}</small>
-                            </div>
-                        </div>
-                        <div class="col-md-2 text-center">
-                            <span class="badge bg-${statusClass}">${item.status_code || 'خطا'}</span>
-                        </div>
-                        <div class="col-md-2 text-center">
-                            <small>${formatResponseTime(item.response_time)}</small>
-                        </div>
-                        <div class="col-md-2 text-center">
-                            <small class="text-muted">${new Date(item.executed_at).toLocaleString('fa-IR')}</small>
-                            <br>
-                            <div class="btn-group mt-1" role="group">
-                                <button class="btn btn-outline-primary btn-sm view-detail" data-id="${item.id}" title="جزئیات">
-                                    <i class="bi bi-eye"></i>
-                                </button>
-                                <button class="btn btn-outline-success btn-sm re-execute" data-id="${item.id}" title="اجرای مجدد">
-                                    <i class="bi bi-arrow-clockwise"></i>
-                                </button>
-                                <button class="btn btn-outline-danger btn-sm delete-history" data-id="${item.id}" title="حذف">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-        
-        container.innerHTML = historyHTML;
-        
-        // نمایش pagination
-        if (data.next || data.previous) {
-            const paginationHTML = `
-                <nav class="mt-3">
-                    <ul class="pagination justify-content-center">
-                        ${data.previous ? `<li class="page-item"><button class="page-link" onclick="loadHistory(${page - 1}, getCurrentFilters())">قبلی</button></li>` : ''}
-                        <li class="page-item active"><span class="page-link">${page}</span></li>
-                        ${data.next ? `<li class="page-item"><button class="page-link" onclick="loadHistory(${page + 1}, getCurrentFilters())">بعدی</button></li>` : ''}
-                    </ul>
-                </nav>
-            `;
-            container.innerHTML += paginationHTML;
-        }
-        
-    } catch (error) {
-        console.error('خطا در بارگذاری تاریخچه:', error);
-        showAlert('خطا در بارگذاری تاریخچه', 'danger');
-    }
+// بررسی وضعیت لاگین
+const isAuthenticated = '{{ user.is_authenticated }}' === 'True';
+
+// تابع کمکی برای تبدیل متد به کلاس
+function getMethodBadgeClass(method) {
+    const methodClasses = {
+        'GET': 'method-get',
+        'POST': 'method-post',
+        'PUT': 'method-put',
+        'DELETE': 'method-delete',
+        'PATCH': 'method-patch'
+    };
+    return methodClasses[method] || 'bg-secondary';
 }
 
-// دریافت فیلترهای فعلی
-function getCurrentFilters() {
-    return {
-        status: document.getElementById('status-filter').value,
-        method: document.getElementById('method-filter').value,
-        url: document.getElementById('url-search').value
-    };
+// تابع کمکی برای فرمت کردن زمان پاسخ
+function formatResponseTime(time) {
+    if (!time) return '0 میلی‌ثانیه';
+    return `${time} میلی‌ثانیه`;
 }
 
 // نمایش جزئیات درخواست
@@ -287,103 +251,221 @@ async function showHistoryDetail(historyId) {
 // اجرای مجدد درخواست
 async function reExecuteRequest(historyId) {
     try {
-        const response = await axios.post(`/request/api/history/${historyId}/re_execute/`);
-        const result = response.data;
+        if (!isAuthenticated) {
+            showAlert('برای اجرای مجدد درخواست باید وارد شوید', 'warning');
+            return;
+        }
+
+        const response = await axios.post(`/request/api/history/${historyId}/re-execute/`, {}, {
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        });
         
-        showAlert('درخواست مجدداً اجرا شد!', 'success');
-        
-        // نمایش نتیجه در modal
-        showHistoryDetail(result.id);
-        
-        // بروزرسانی لیست
-        loadHistory(currentPage, getCurrentFilters());
+        showAlert('درخواست با موفقیت اجرا شد', 'success');
+        // بروزرسانی نتایج در صفحه
+        loadHistory();
         
     } catch (error) {
-        console.error('خطا در اجرای مجدد:', error);
-        showAlert('خطا در اجرای مجدد: ' + (error.response?.data?.error || error.message), 'danger');
+        let errorMessage = 'خطا در اجرای مجدد درخواست';
+        if (error.response?.status === 403) {
+            errorMessage = 'شما اجازه اجرای مجدد این درخواست را ندارید';
+        } else if (error.response?.data?.error) {
+            errorMessage = error.response.data.error;
+        }
+        showAlert(errorMessage, 'error');
     }
 }
 
 // حذف تاریخچه منفرد
 async function deleteHistoryItem(historyId) {
-    if (!confirm('آیا مطمئن هستید که می‌خواهید این تاریخچه را حذف کنید؟')) {
-        return;
-    }
-    
     try {
-        await axios.delete(`/request/api/history/${historyId}/`);
-        showAlert('تاریخچه با موفقیت حذف شد!', 'success');
-        loadHistory(currentPage, getCurrentFilters());
+        if (!isAuthenticated) {
+            showAlert('برای حذف درخواست باید وارد شوید', 'warning');
+            return;
+        }
+
+        if (!confirm('آیا مطمئن هستید که می‌خواهید این درخواست را حذف کنید؟')) {
+            return;
+        }
+
+        await axios.delete(`/request/api/history/${historyId}/`, {
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        });
+        
+        showAlert('درخواست با موفقیت حذف شد', 'success');
+        // بروزرسانی لیست
+        loadHistory();
+        
     } catch (error) {
-        console.error('خطا در حذف تاریخچه:', error);
-        showAlert('خطا در حذف تاریخچه', 'danger');
+        let errorMessage = 'خطا در حذف درخواست';
+        if (error.response?.status === 403) {
+            errorMessage = 'شما اجازه حذف این درخواست را ندارید';
+        } else if (error.response?.data?.error) {
+            errorMessage = error.response.data.error;
+        }
+        showAlert(errorMessage, 'error');
     }
 }
 
-// Event listeners
-document.addEventListener('DOMContentLoaded', function() {
-    loadHistory();
-});
-
-document.getElementById('apply-filters').addEventListener('click', function() {
-    loadHistory(1, getCurrentFilters());
-});
-
-document.addEventListener('click', function(e) {
-    if (e.target.closest('.view-detail')) {
-        const historyId = e.target.closest('.view-detail').dataset.id;
-        showHistoryDetail(historyId);
-    }
-    
-    if (e.target.closest('.re-execute')) {
-        const historyId = e.target.closest('.re-execute').dataset.id;
-        reExecuteRequest(historyId);
-    }
-    
-    if (e.target.closest('.delete-history')) {
-        const historyId = e.target.closest('.delete-history').dataset.id;
-        deleteHistoryItem(historyId);
-    }
-});
-
 // ذخیره پاسخ
-document.getElementById('save-response-btn').addEventListener('click', async function() {
-    if (!currentHistoryId) return;
-    
-    const name = prompt('نام پاسخ را وارد کنید:');
-    if (!name) return;
-    
+async function saveResponse(historyId) {
     try {
-        await axios.post('/request/api/saved-responses/', {
-            name: name,
-            history: currentHistoryId,
-            notes: ''
+        if (!isAuthenticated) {
+            showAlert('برای ذخیره پاسخ باید وارد شوید', 'warning');
+            return;
+        }
+
+        const name = prompt('نام پاسخ را وارد کنید:');
+        if (!name) return;
+
+        const response = await axios.post(`/request/api/history/${historyId}/save-response/`, {
+            name: name
+        }, {
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
         });
         
-        showAlert('پاسخ با موفقیت ذخیره شد!', 'success');
+        showAlert('پاسخ با موفقیت ذخیره شد', 'success');
+        
     } catch (error) {
-        console.error('خطا در ذخیره پاسخ:', error);
-        showAlert('خطا در ذخیره پاسخ', 'danger');
+        let errorMessage = 'خطا در ذخیره پاسخ';
+        if (error.response?.status === 403) {
+            errorMessage = 'شما اجازه ذخیره این پاسخ را ندارید';
+        } else if (error.response?.data?.error) {
+            errorMessage = error.response.data.error;
+        }
+        showAlert(errorMessage, 'error');
     }
-});
+}
 
-// پاک کردن تاریخچه
-document.getElementById('clear-history').addEventListener('click', async function() {
-    if (!confirm('آیا مطمئن هستید که می‌خواهید تمام تاریخچه را پاک کنید؟')) {
-        return;
-    }
-    
+// بارگذاری تاریخچه
+async function loadHistory() {
     try {
-        const response = await axios.delete('/request/api/history/clear_all/');
-        showAlert(`${response.data.deleted_count} مورد از تاریخچه پاک شد.`, 'success');
-        loadHistory();
+        if (!isAuthenticated) {
+            document.getElementById('history-container').innerHTML = `
+                <div class="text-center p-5">
+                    <i class="bi bi-lock h1 text-muted"></i>
+                    <h4 class="mt-3">برای مشاهده تاریخچه باید وارد شوید</h4>
+                    <a href="{% url 'login' %}" class="btn btn-primary mt-3">
+                        <i class="bi bi-box-arrow-in-right"></i> ورود به حساب
+                    </a>
+                </div>
+            `;
+            return;
+        }
+
+        const response = await axios.get('/request/api/history/');
+        const history = response.data;
+        
+        if (!history || history.length === 0) {
+            document.getElementById('history-container').innerHTML = `
+                <div class="text-center p-5">
+                    <i class="bi bi-clock-history h1 text-muted"></i>
+                    <h4 class="mt-3">تاریخچه خالی است</h4>
+                    <p class="text-muted">هنوز درخواستی ثبت نشده است</p>
+                </div>
+            `;
+            return;
+        }
+
+        const historyHTML = history.map(item => `
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <span class="badge ${getMethodBadgeClass(item.method)} me-2">${item.method}</span>
+                            <span class="text-break">${item.url}</span>
+                        </div>
+                        <div>
+                            <span class="badge ${item.status_code >= 200 && item.status_code < 300 ? 'bg-success' : 'bg-danger'}">
+                                ${item.status_code}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            ${new Date(item.created_at).toLocaleString('fa-IR')}
+                        </small>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-primary" onclick="reExecuteRequest(${item.id})" title="اجرای مجدد">
+                                <i class="bi bi-play"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-success" onclick="saveResponse(${item.id})" title="ذخیره پاسخ">
+                                <i class="bi bi-save"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteHistoryItem(${item.id})" title="حذف">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        
+        document.getElementById('history-container').innerHTML = historyHTML;
+        
     } catch (error) {
-        console.error('خطا در پاک کردن تاریخچه:', error);
-        showAlert('خطا در پاک کردن تاریخچه', 'danger');
+        console.error('خطا در بارگذاری تاریخچه:', error);
+        let errorMessage = 'خطا در بارگذاری تاریخچه';
+        
+        if (error.response?.status === 403) {
+            errorMessage = 'برای مشاهده تاریخچه باید وارد شوید';
+        } else if (error.response?.data?.error) {
+            errorMessage = error.response.data.error;
+        }
+        
+        document.getElementById('history-container').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                ${errorMessage}
+                <button class="btn btn-outline-danger btn-sm ms-3" onclick="loadHistory()">
+                    <i class="bi bi-arrow-clockwise"></i> تلاش مجدد
+                </button>
+            </div>
+        `;
     }
+}
+
+// بارگذاری اولیه
+document.addEventListener('DOMContentLoaded', loadHistory);
+
+// فیلتر کردن تاریخچه
+document.getElementById('apply-filters').addEventListener('click', function() {
+    const status = document.getElementById('status-filter').value;
+    const method = document.getElementById('method-filter').value;
+    const url = document.getElementById('url-search').value.toLowerCase();
+    
+    const items = document.querySelectorAll('.history-item');
+    items.forEach(item => {
+        let show = true;
+        
+        // فیلتر وضعیت
+        if (status) {
+            const itemStatus = item.querySelector('.badge.bg-success') ? 'success' : 'error';
+            if (itemStatus !== status) show = false;
+        }
+        
+        // فیلتر متد
+        if (method && show) {
+            const itemMethod = item.querySelector('.badge').textContent;
+            if (itemMethod !== method) show = false;
+        }
+        
+        // فیلتر URL
+        if (url && show) {
+            const itemUrl = item.querySelector('.text-break').textContent.toLowerCase();
+            if (!itemUrl.includes(url)) show = false;
+        }
+        
+        item.style.display = show ? '' : 'none';
+    });
 });
 
-// فیلتر بر اساس تایپ
+// فیلتر با Enter
 document.getElementById('url-search').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
         document.getElementById('apply-filters').click();

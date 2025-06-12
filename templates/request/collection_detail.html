@@ -111,18 +111,29 @@ let currentRequestId = null;
 
 // بارگذاری درخواست‌های کالکشن
 async function loadCollectionRequests() {
+    console.log('شروع بارگذاری درخواست‌های کالکشن:', currentCollectionId);
+    
     try {
-        const response = await axios.get(`/request/api/collections/${currentCollectionId}/requests/`);
-        const requests = response.data;
+        const response = await axios.get(`/request/api/collections/${currentCollectionId}/requests/`, {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+            }
+        });
         
+        console.log('پاسخ API:', response.data);
+        const requests = response.data;
         const container = document.getElementById('requests-container');
         
-        if (requests.length === 0) {
+        if (!requests || requests.length === 0) {
             container.innerHTML = `
                 <div class="text-center p-5">
                     <i class="bi bi-inbox display-1 text-muted"></i>
                     <h4 class="mt-3 text-muted">هیچ درخواستی در این کالکشن نیست</h4>
                     <p class="text-muted">برای شروع یک درخواست جدید اضافه کنید</p>
+                    <button class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#newRequestModal">
+                        <i class="bi bi-plus"></i> افزودن درخواست جدید
+                    </button>
                 </div>
             `;
             return;
@@ -139,11 +150,11 @@ async function loadCollectionRequests() {
                             </div>
                             <div class="col-md-6">
                                 <h6 class="mb-1">${request.name}</h6>
-                                <small class="text-muted">${request.url}</small>
+                                <small class="text-muted text-break">${request.url}</small>
                                 ${request.description ? `<br><small class="text-info">${request.description}</small>` : ''}
                             </div>
                             <div class="col-md-3 text-end">
-                                <small class="text-muted">بروزرسانی: ${new Date(request.updated_at).toLocaleDateString('fa-IR')}</small>
+                                <small class="text-muted">آخرین بروزرسانی: ${new Date(request.updated_at).toLocaleDateString('fa-IR')}</small>
                             </div>
                             <div class="col-md-2 text-end">
                                 <div class="btn-group">
@@ -165,11 +176,56 @@ async function loadCollectionRequests() {
         });
         
         container.innerHTML = requestsHTML;
+        console.log(`${requests.length} درخواست با موفقیت بارگذاری شد`);
         
     } catch (error) {
         console.error('خطا در بارگذاری درخواست‌ها:', error);
-        showAlert('خطا در بارگذاری درخواست‌ها', 'danger');
+        console.error('جزئیات خطا:', {
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data,
+            url: error.config?.url,
+            method: error.config?.method
+        });
+        
+        const container = document.getElementById('requests-container');
+        let errorMessage = 'خطای نامشخص در بارگذاری درخواست‌ها';
+        
+        if (error.response?.status === 401) {
+            errorMessage = 'لطفاً دوباره وارد شوید';
+            setTimeout(() => window.location.href = '/login/', 2000);
+        } else if (error.response?.status === 403) {
+            errorMessage = 'شما اجازه دسترسی به این کالکشن را ندارید';
+        } else if (error.response?.data?.detail) {
+            errorMessage = error.response.data.detail;
+        } else if (error.response?.data?.error) {
+            errorMessage = error.response.data.error;
+        }
+        
+        container.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                ${errorMessage}
+                <button class="btn btn-outline-danger btn-sm ms-3" onclick="loadCollectionRequests()">
+                    <i class="bi bi-arrow-clockwise"></i> تلاش مجدد
+                </button>
+            </div>
+        `;
+        
+        showAlert(errorMessage, 'danger');
     }
+}
+
+// تابع کمکی برای تعیین کلاس badge متد
+function getMethodBadgeClass(method) {
+    const classes = {
+        'GET': 'bg-success',
+        'POST': 'bg-primary',
+        'PUT': 'bg-warning',
+        'DELETE': 'bg-danger',
+        'PATCH': 'bg-info'
+    };
+    return classes[method] || 'bg-secondary';
 }
 
 // ذخیره درخواست جدید
@@ -270,6 +326,8 @@ document.getElementById('save-request').addEventListener('click', async function
 
 // اجرای درخواست
 async function executeRequest(requestId) {
+    console.log('شروع اجرای درخواست:', requestId);
+    
     try {
         currentRequestId = requestId;
         
@@ -277,110 +335,182 @@ async function executeRequest(requestId) {
         const requestResponse = await axios.get(`/request/api/requests/${requestId}/`);
         const request = requestResponse.data;
         
-        document.getElementById('execute-modal-title').textContent = `اجرای ${request.name}`;
+        console.log('جزئیات درخواست:', request);
+        
+        // نمایش modal
+        const executeModal = new bootstrap.Modal(document.getElementById('executeRequestModal'));
+        executeModal.show();
+        
+        document.getElementById('execute-modal-title').textContent = `اجرای درخواست: ${request.name}`;
         
         // نمایش جزئیات درخواست
         document.getElementById('execute-modal-body').innerHTML = `
-            <div class="mb-3">
-                <h6><span class="badge ${getMethodBadgeClass(request.method)}">${request.method}</span> ${request.url}</h6>
-                ${request.description ? `<p class="text-muted">${request.description}</p>` : ''}
+            <div class="mb-4">
+                <div class="d-flex align-items-center mb-3">
+                    <span class="badge ${getMethodBadgeClass(request.method)} me-2">${request.method}</span>
+                    <span class="text-break flex-grow-1">${request.url}</span>
+                </div>
+                ${request.description ? `<p class="text-muted mb-0">${request.description}</p>` : ''}
             </div>
             
-            <div class="row">
+            <div class="row mb-4">
                 <div class="col-md-6">
-                    <h6>هدرها:</h6>
-                    <pre class="bg-light p-2 rounded">${JSON.stringify(request.headers || {}, null, 2)}</pre>
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="bi bi-tags"></i> هدرها</h6>
+                        </div>
+                        <div class="card-body">
+                            <pre class="mb-0" style="max-height: 200px; overflow-y: auto;">${JSON.stringify(request.headers || {}, null, 2)}</pre>
+                        </div>
+                    </div>
                 </div>
                 <div class="col-md-6">
-                    <h6>پارامترها:</h6>
-                    <pre class="bg-light p-2 rounded">${JSON.stringify(request.params || {}, null, 2)}</pre>
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="bi bi-list-ul"></i> پارامترها</h6>
+                        </div>
+                        <div class="card-body">
+                            <pre class="mb-0" style="max-height: 200px; overflow-y: auto;">${JSON.stringify(request.params || {}, null, 2)}</pre>
+                        </div>
+                    </div>
                 </div>
             </div>
             
             ${request.body_raw ? `
-                <div class="mb-3">
-                    <h6>بدنه درخواست:</h6>
-                    <pre class="bg-light p-2 rounded">${request.body_raw}</pre>
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="bi bi-code-square"></i> بدنه درخواست</h6>
+                    </div>
+                    <div class="card-body">
+                        <pre class="mb-0" style="max-height: 200px; overflow-y: auto;">${request.body_raw}</pre>
+                    </div>
                 </div>
             ` : ''}
             
-            <div id="execution-result" class="mt-4" style="display: none;">
-                <h6>نتیجه اجرا:</h6>
-                <div id="result-content"></div>
+            <div id="execution-result" style="display: none;">
+                <div class="card">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0"><i class="bi bi-check-circle"></i> نتیجه اجرا</h6>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-light" id="maximize-response" title="بزرگنمایی">
+                                <i class="bi bi-arrows-fullscreen"></i>
+                            </button>
+                            <button class="btn btn-sm btn-light" id="minimize-response" title="کوچک‌نمایی" style="display: none;">
+                                <i class="bi bi-fullscreen-exit"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <strong>کد وضعیت:</strong>
+                                <span id="result-status" class="badge bg-success ms-2">200</span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>زمان پاسخ:</strong>
+                                <span id="result-time" class="text-muted ms-2">0ms</span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>اندازه پاسخ:</strong>
+                                <span id="result-size" class="text-muted ms-2">0 bytes</span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0">هدرهای پاسخ:</h6>
+                                <button class="btn btn-sm btn-outline-secondary copy-headers" title="کپی هدرها">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                            <pre id="result-headers" class="bg-light p-3 rounded response-content" style="max-height: 150px; overflow-y: auto;"></pre>
+                        </div>
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0">بدنه پاسخ:</h6>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-secondary copy-response" title="کپی پاسخ">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary format-json" title="فرمت JSON">
+                                        <i class="bi bi-braces"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <pre id="result-body" class="bg-light p-3 rounded response-content" style="max-height: 300px; overflow-y: auto;"></pre>
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
         
-        // نمایش modal
-        new bootstrap.Modal(document.getElementById('executeRequestModal')).show();
+        // تنظیم event listener برای دکمه اجرا
+        const executeBtn = document.getElementById('execute-request-btn');
+        executeBtn.onclick = async function() {
+            try {
+                executeBtn.disabled = true;
+                executeBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> در حال اجرا...';
+                
+                // اجرای درخواست
+                const executeResponse = await axios.post(`/request/api/requests/${requestId}/execute/`);
+                const result = executeResponse.data;
+                
+                console.log('نتیجه اجرا:', result);
+                
+                // نمایش نتیجه
+                document.getElementById('execution-result').style.display = 'block';
+                document.getElementById('result-status').textContent = result.status_code;
+                document.getElementById('result-time').textContent = result.response_time;
+                document.getElementById('result-size').textContent = result.response_size + ' bytes';
+                
+                try {
+                    // تلاش برای نمایش JSON
+                    const formattedBody = JSON.stringify(JSON.parse(result.response_body), null, 2);
+                    document.getElementById('result-body').textContent = formattedBody;
+                } catch {
+                    // اگر JSON نبود، به صورت متن نمایش بده
+                    document.getElementById('result-body').textContent = result.response_body;
+                }
+                
+                document.getElementById('result-headers').textContent = JSON.stringify(result.response_headers || {}, null, 2);
+                
+                // تنظیم رنگ وضعیت
+                const statusBadge = document.getElementById('result-status');
+                const resultCard = statusBadge.closest('.card');
+                if (result.status_code >= 200 && result.status_code < 300) {
+                    statusBadge.className = 'badge bg-success ms-2';
+                    resultCard.querySelector('.card-header').className = 'card-header bg-success text-white';
+                } else {
+                    statusBadge.className = 'badge bg-danger ms-2';
+                    resultCard.querySelector('.card-header').className = 'card-header bg-danger text-white';
+                }
+                
+                showAlert('درخواست با موفقیت اجرا شد', 'success');
+                
+            } catch (error) {
+                console.error('خطا در اجرای درخواست:', error);
+                
+                let errorMessage = 'خطای نامشخص در اجرای درخواست';
+                if (error.response?.data?.error) {
+                    errorMessage = error.response.data.error;
+                } else if (error.response?.data?.detail) {
+                    errorMessage = error.response.data.detail;
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+                
+                showAlert(errorMessage, 'danger');
+                
+            } finally {
+                executeBtn.disabled = false;
+                executeBtn.innerHTML = '<i class="bi bi-send"></i> اجرا';
+            }
+        };
         
     } catch (error) {
-        console.error('خطا در بارگذاری درخواست:', error);
-        showAlert('خطا در بارگذاری درخواست', 'danger');
+        console.error('خطا در بارگذاری جزئیات درخواست:', error);
+        showAlert('خطا در بارگذاری جزئیات درخواست: ' + (error.response?.data?.error || error.message), 'danger');
     }
 }
-
-// اجرای درخواست
-document.getElementById('execute-request-btn').addEventListener('click', async function() {
-    if (!currentRequestId) return;
-    
-    const btn = this;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> در حال اجرا...';
-    btn.disabled = true;
-    
-    try {
-        const response = await axios.post(`/request/api/requests/${currentRequestId}/execute/`);
-        const result = response.data;
-        
-        // نمایش نتیجه
-        const resultContainer = document.getElementById('result-content');
-        resultContainer.innerHTML = `
-            <div class="card">
-                <div class="card-header">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>کد وضعیت:</strong> <span class="badge ${result.is_success ? 'bg-success' : 'bg-danger'}">${result.status_code || 'خطا'}</span>
-                        </div>
-                        <div class="col-md-3">
-                            <strong>زمان:</strong> ${formatResponseTime(result.response_time)}
-                        </div>
-                        <div class="col-md-3">
-                            <strong>اندازه:</strong> ${result.response_size ? result.response_size + ' بایت' : '-'}
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <ul class="nav nav-tabs mb-3">
-                        <li class="nav-item">
-                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#result-body">بدنه پاسخ</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#result-headers">هدرها</button>
-                        </li>
-                    </ul>
-                    <div class="tab-content">
-                        <div class="tab-pane fade show active" id="result-body">
-                            <pre class="bg-light p-3 rounded" style="max-height: 300px; overflow-y: auto;">${formatJsonResponse(result.response_body)}</pre>
-                        </div>
-                        <div class="tab-pane fade" id="result-headers">
-                            <pre class="bg-light p-3 rounded">${JSON.stringify(result.response_headers, null, 2)}</pre>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.getElementById('execution-result').style.display = 'block';
-        showAlert('درخواست با موفقیت اجرا شد!', 'success');
-        
-    } catch (error) {
-        console.error('خطا در اجرای درخواست:', error);
-        showAlert('خطا در اجرای درخواست: ' + (error.response?.data?.error || error.message), 'danger');
-    } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    }
-});
 
 // حذف درخواست
 async function deleteRequest(requestId) {
@@ -409,6 +539,65 @@ document.addEventListener('click', function(e) {
         const requestId = e.target.closest('.delete-request').dataset.id;
         deleteRequest(requestId);
     }
+    
+    // مدیریت بزرگنمایی و کوچک‌نمایی
+    if (e.target.closest('#maximize-response')) {
+        const card = document.querySelector('#execution-result .card');
+        const maxBtn = document.getElementById('maximize-response');
+        const minBtn = document.getElementById('minimize-response');
+        
+        card.classList.add('maximized');
+        maxBtn.style.display = 'none';
+        minBtn.style.display = 'inline-block';
+        
+        // اضافه کردن کلاس به همه pre های پاسخ
+        document.querySelectorAll('.response-content').forEach(el => {
+            el.classList.add('maximized');
+        });
+    }
+    
+    if (e.target.closest('#minimize-response')) {
+        const card = document.querySelector('#execution-result .card');
+        const maxBtn = document.getElementById('maximize-response');
+        const minBtn = document.getElementById('minimize-response');
+        
+        card.classList.remove('maximized');
+        maxBtn.style.display = 'inline-block';
+        minBtn.style.display = 'none';
+        
+        // حذف کلاس از همه pre های پاسخ
+        document.querySelectorAll('.response-content').forEach(el => {
+            el.classList.remove('maximized');
+        });
+    }
+    
+    // کپی کردن پاسخ
+    if (e.target.closest('.copy-response')) {
+        const responseText = document.getElementById('result-body').textContent;
+        navigator.clipboard.writeText(responseText).then(() => {
+            showAlert('پاسخ در کلیپ‌بورد کپی شد', 'success', 2000);
+        });
+    }
+    
+    // کپی کردن هدرها
+    if (e.target.closest('.copy-headers')) {
+        const headersText = document.getElementById('result-headers').textContent;
+        navigator.clipboard.writeText(headersText).then(() => {
+            showAlert('هدرها در کلیپ‌بورد کپی شد', 'success', 2000);
+        });
+    }
+    
+    // فرمت کردن JSON
+    if (e.target.closest('.format-json')) {
+        const bodyElement = document.getElementById('result-body');
+        try {
+            const jsonData = JSON.parse(bodyElement.textContent);
+            bodyElement.textContent = JSON.stringify(jsonData, null, 2);
+            showAlert('JSON با موفقیت فرمت شد', 'success', 2000);
+        } catch (e) {
+            showAlert('محتوا JSON معتبر نیست', 'warning', 2000);
+        }
+    }
 });
 
 // فرمت کردن پاسخ JSON
@@ -426,4 +615,77 @@ document.addEventListener('DOMContentLoaded', function() {
     loadCollectionRequests();
 });
 </script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* استایل‌های موجود */
+    
+    /* استایل‌های جدید برای نمایش پاسخ */
+    .response-content {
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        line-height: 1.5;
+        transition: all 0.3s ease;
+    }
+    
+    .response-content.maximized {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100vh;
+        max-height: none !important;
+        z-index: 9999;
+        margin: 0;
+        border-radius: 0;
+        padding: 20px;
+        background: #fff;
+    }
+    
+    #execution-result .card.maximized {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100vh;
+        z-index: 9998;
+        margin: 0;
+        border-radius: 0;
+    }
+    
+    #execution-result .card.maximized .card-body {
+        height: calc(100vh - 60px);
+        overflow-y: auto;
+    }
+    
+    .copy-response:hover,
+    .copy-headers:hover,
+    .format-json:hover {
+        background-color: #e9ecef;
+    }
+    
+    .response-content::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    .response-content::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    .response-content::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
+    
+    .response-content::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+</style>
 {% endblock %} 
