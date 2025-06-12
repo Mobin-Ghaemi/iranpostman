@@ -179,20 +179,39 @@ document.getElementById('save-request').addEventListener('click', async function
     const url = document.getElementById('request-url').value.trim();
     const description = document.getElementById('request-description').value.trim();
     
+    console.log('شروع ایجاد درخواست جدید:', { name, method, url, description, currentCollectionId });
+    
     if (!name || !url) {
         showAlert('نام و URL درخواست الزامی است', 'warning');
         return;
     }
     
+    const btn = this;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> در حال ایجاد...';
+    btn.disabled = true;
+    
     try {
-        await axios.post('/request/api/requests/', {
+        console.log('ارسال درخواست به API...');
+        
+        const requestData = {
             name: name,
             method: method,
             url: url,
             description: description,
             collection: currentCollectionId
+        };
+        
+        console.log('داده‌های ارسالی:', requestData);
+        
+        const response = await axios.post('/request/api/requests/', requestData, {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+            }
         });
         
+        console.log('پاسخ API:', response.data);
         showAlert('درخواست با موفقیت ایجاد شد!', 'success');
         
         // پاک کردن فرم و بستن modal
@@ -200,11 +219,52 @@ document.getElementById('save-request').addEventListener('click', async function
         bootstrap.Modal.getInstance(document.getElementById('newRequestModal')).hide();
         
         // بروزرسانی لیست
-        loadCollectionRequests();
+        await loadCollectionRequests();
         
     } catch (error) {
         console.error('خطا در ایجاد درخواست:', error);
-        showAlert('خطا در ایجاد درخواست', 'danger');
+        console.error('جزئیات خطا:', {
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data,
+            url: error.config?.url,
+            method: error.config?.method
+        });
+        
+        let errorMessage = 'خطای نامشخص در ایجاد درخواست';
+        
+        if (error.response?.status === 401) {
+            errorMessage = 'شما وارد نشده‌اید. لطفاً ابتدا وارد شوید.';
+        } else if (error.response?.status === 403) {
+            errorMessage = 'شما اجازه ایجاد درخواست در این کالکشن را ندارید.';
+        } else if (error.response?.status === 400) {
+            errorMessage = 'داده‌های ارسالی نامعتبر است';
+            if (error.response?.data) {
+                // نمایش خطاهای validation
+                const validationErrors = [];
+                for (const [field, errors] of Object.entries(error.response.data)) {
+                    if (Array.isArray(errors)) {
+                        validationErrors.push(`${field}: ${errors.join(', ')}`);
+                    } else {
+                        validationErrors.push(`${field}: ${errors}`);
+                    }
+                }
+                if (validationErrors.length > 0) {
+                    errorMessage += ': ' + validationErrors.join('; ');
+                }
+            }
+        } else if (error.response?.data?.detail) {
+            errorMessage = error.response.data.detail;
+        } else if (error.response?.data?.error) {
+            errorMessage = error.response.data.error;
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+        
+        showAlert('خطا در ایجاد درخواست: ' + errorMessage, 'error', 7000);
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
 });
 

@@ -78,7 +78,7 @@ class RequestHistorySerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     request_name = serializers.SerializerMethodField()
     response_json = serializers.SerializerMethodField()
-    is_success = serializers.BooleanField(source='is_success', read_only=True)
+    is_success = serializers.BooleanField(read_only=True)
     
     class Meta:
         model = RequestHistory

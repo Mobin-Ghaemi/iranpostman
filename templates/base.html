@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>{% block title %}Iran Postman{% endblock %}</title>
     
     <!-- Bootstrap CSS -->
@@ -212,32 +215,32 @@
         }
         
         .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255, 255, 255, 0.8) !important;
             padding: 15px 20px;
             margin: 5px 15px;
             border-radius: 12px;
             transition: all 0.3s ease;
             font-weight: 500;
             border: 2px solid transparent;
+            text-decoration: none !important;
+            cursor: pointer !important;
+            pointer-events: auto !important;
+            display: block;
         }
         
         .sidebar .nav-link:hover {
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
+            background: rgba(255, 255, 255, 0.15) !important;
+            color: white !important;
             transform: translateX(-5px);
             border-color: rgba(255, 255, 255, 0.3);
+            text-decoration: none !important;
         }
         
         .sidebar .nav-link.active {
-            background: rgba(255, 255, 255, 0.25);
-            color: white;
+            background: rgba(255, 255, 255, 0.25) !important;
+            color: white !important;
             border-color: rgba(255, 255, 255, 0.5);
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-        
-        .sidebar .nav-link.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
         }
         
         .sidebar .nav-link i {
@@ -283,10 +286,168 @@
             font-size: 12px;
             border-radius: 15px;
         }
+        
+        /* استایل‌های اضافی برای دکمه‌های navigation */
+        .sidebar button.nav-link {
+            background: none !important;
+            border: none !important;
+            display: block;
+            width: 100%;
+            text-align: right;
+            font-family: inherit;
+            color: inherit;
+        }
+        
+        .sidebar button.nav-link:focus {
+            outline: 2px solid rgba(255, 255, 255, 0.3);
+            outline-offset: 2px;
+        }
+        
+        .sidebar button.nav-link:hover:not(.disabled) {
+            background: rgba(255, 255, 255, 0.15) !important;
+            color: white;
+            transform: translateX(-5px);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* اطمینان از کار کردن onclick */
+        .sidebar .nav-link[onclick] {
+            cursor: pointer !important;
+            pointer-events: auto !important;
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+    <script>
+    // تابع showAlert - ساده و مستقیم
+    function showAlert(message, type = 'info', duration = 5000) {
+        console.log('🔥 showAlert called:', message, type, duration);
+        
+        try {
+            // ایجاد container اگر وجود ندارد
+            let container = document.querySelector('.toast-container');
+            if (!container) {
+                console.log('📦 Creating toast container...');
+                container = document.createElement('div');
+                container.className = 'toast-container';
+                container.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 9999; max-width: 350px;';
+                document.body.appendChild(container);
+            }
+            
+            // تنظیم رنگ
+            let bgClass = 'bg-info';
+            let icon = '🔵';
+            if (type === 'success') { bgClass = 'bg-success'; icon = '✅'; }
+            else if (type === 'warning') { bgClass = 'bg-warning'; icon = '⚠️'; }
+            else if (type === 'danger' || type === 'error') { bgClass = 'bg-danger'; icon = '❌'; }
+            
+            // ایجاد toast
+            const toastId = 'toast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            const toastHTML = `
+                <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0 mb-2" role="alert" style="min-width: 300px;">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${icon} ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2" onclick="document.getElementById('${toastId}').remove();"></button>
+                    </div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', toastHTML);
+            const toastEl = document.getElementById(toastId);
+            
+            if (!toastEl) {
+                console.error('❌ Failed to create toast element');
+                return null;
+            }
+            
+            console.log('✅ Toast created:', toastId);
+            
+            // نمایش با Bootstrap Toast اگر در دسترس باشد
+            if (window.bootstrap && bootstrap.Toast) {
+                const toast = new bootstrap.Toast(toastEl, { 
+                    delay: duration,
+                    autohide: true 
+                });
+                toast.show();
+                toastEl.addEventListener('hidden.bs.toast', () => {
+                    console.log('🗑️ Removing toast:', toastId);
+                    toastEl.remove();
+                });
+            } else {
+                // Fallback without Bootstrap
+                console.log('⚠️ Bootstrap Toast not available, using setTimeout');
+                setTimeout(() => {
+                    if (toastEl && toastEl.parentNode) {
+                        toastEl.remove();
+                    }
+                }, duration);
+            }
+            
+            return toastEl;
+        } catch (error) {
+            console.error('❌ Error in showAlert:', error);
+            // Fallback: simple alert
+            alert(message);
+            return null;
+        }
+    }
+    
+    // تست تابع showAlert
+    function testAlert() {
+        showAlert('سیستم کار می‌کند! 🎉', 'success', 3000);
+    }
+    
+    // تست navigation - فقط برای دیباگ
+    function testNavigation() {
+        console.log('🔗 Testing all navigation links...');
+        const links = document.querySelectorAll('.sidebar .nav-link');
+        links.forEach((link, i) => {
+            console.log(`Link ${i}: ${link.textContent.trim()} -> ${link.href}`);
+        });
+        showAlert(`پیدا شد ${links.length} لینک navigation`, 'info', 2000);
+    }
+    
+    console.log('✅ showAlert function loaded globally');
+    
+    // تابع برای تست کردن دکمه‌ها
+    function testNavButtons() {
+        console.log('🧪 Testing navigation buttons...');
+        const allLinks = document.querySelectorAll('.sidebar .nav-link');
+        const disabledLinks = document.querySelectorAll('.sidebar .nav-link.disabled');
+        console.log('Found total links:', allLinks.length);
+        console.log('Found disabled links:', disabledLinks.length);
+        
+        allLinks.forEach((link, index) => {
+            console.log(`Link ${index}:`, {
+                text: link.textContent.trim(),
+                href: link.href,
+                disabled: link.classList.contains('disabled')
+            });
+        });
+    }
+    
+    // اجرای تست بعد از لود شدن صفحه
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 DOM loaded, navigation ready!');
+        
+        // بررسی وضعیت کاربر
+        const userInfo = document.querySelector('.user-info .fw-bold');
+        if (userInfo) {
+            console.log('👤 Current user:', userInfo.textContent);
+        }
+        
+        setTimeout(testNavButtons, 1000);
+        
+        // تست نوتیفیکیشن اولیه
+        setTimeout(() => {
+            showAlert('سیستم navigation آماده است! ✅', 'success', 3000);
+        }, 2000);
+    });
+    </script>
+
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
@@ -349,10 +510,7 @@
                         </a>
                         
                         {% if user.is_authenticated %}
-                            <a class="nav-link {% if 'collections' in request.resolver_match.url_name %}active{% endif %}" 
-                               href="{% url 'request:collections' %}">
-                                <i class="bi bi-folder"></i> کالکشن‌ها
-                            </a>
+
                             <a class="nav-link {% if 'history' in request.resolver_match.url_name %}active{% endif %}" 
                                href="{% url 'request:history' %}">
                                 <i class="bi bi-clock-history"></i> تاریخچه
@@ -362,17 +520,51 @@
                                 <i class="bi bi-gear-wide-connected"></i> محیط‌ها
                             </a>
                         {% else %}
-                            <a class="nav-link disabled" href="#" title="برای دسترسی ثبت نام کنید">
+                            <a class="nav-link" 
+                               href="{% url 'login' %}" 
+                               title="برای دسترسی وارد شوید">
                                 <i class="bi bi-folder"></i> کالکشن‌ها
-                                <i class="bi bi-lock-fill float-end"></i>
+                                <i class="bi bi-lock-fill float-start"></i>
                             </a>
-                            <a class="nav-link disabled" href="#" title="برای دسترسی ثبت نام کنید">
+                            <a class="nav-link" 
+                               href="{% url 'login' %}" 
+                               title="برای دسترسی وارد شوید">
                                 <i class="bi bi-clock-history"></i> تاریخچه
-                                <i class="bi bi-lock-fill float-end"></i>
+                                <i class="bi bi-lock-fill float-start"></i>
                             </a>
-                            <a class="nav-link disabled" href="#" title="برای دسترسی ثبت نام کنید">
+                            <a class="nav-link" 
+                               href="{% url 'login' %}" 
+                               title="برای دسترسی وارد شوید">
                                 <i class="bi bi-gear-wide-connected"></i> محیط‌ها
-                                <i class="bi bi-lock-fill float-end"></i>
+                                <i class="bi bi-lock-fill float-start"></i>
+                            </a>
+                        {% endif %}
+                        
+                        <!-- دکمه‌های ورود/خروج -->
+                        <hr class="text-white opacity-25 my-3">
+                        
+                        <!-- دکمه تست برای debugging -->
+                        <button class="btn btn-outline-warning btn-sm mb-2 w-100" onclick="testAlert(); testNavigation();">
+                            <i class="bi bi-bug"></i> تست سیستم
+                        </button>
+                        
+                        {% if user.is_authenticated %}
+                            <div class="text-center mb-2">
+                                <small class="text-white opacity-75">وارد شده به عنوان:</small>
+                                <div class="fw-bold text-white">{{ user.username }}</div>
+                            </div>
+                            <a class="nav-link text-center bg-danger bg-opacity-10 border border-danger border-opacity-25" 
+                               href="{% url 'logout' %}">
+                                <i class="bi bi-box-arrow-right"></i> خروج از حساب
+                            </a>
+                        {% else %}
+                            <a class="nav-link text-center bg-success bg-opacity-10 border border-success border-opacity-25" 
+                               href="{% url 'login' %}">
+                                <i class="bi bi-box-arrow-in-right"></i> ورود به حساب
+                            </a>
+                            <a class="nav-link text-center bg-primary bg-opacity-10 border border-primary border-opacity-25" 
+                               href="{% url 'signup' %}">
+                                <i class="bi bi-person-plus"></i> ثبت نام
                             </a>
                         {% endif %}
                     </nav>
@@ -397,129 +589,6 @@
     <!-- Axios -->
     <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
     
-    <script>
-    // تابع نمایش Toast
-    function showAlert(message, type = 'info', duration = 5000) {
-        const toastContainer = document.querySelector('.toast-container');
-        const toastId = 'toast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-        
-        // محدود کردن تعداد toast ها
-        const existingToasts = toastContainer.querySelectorAll('.toast');
-        if (existingToasts.length >= 3) {
-            existingToasts[0].remove();
-        }
-        
-        // رنگ‌بندی و آیکون بر اساس نوع
-        let bgClass, iconClass, titleText;
-        switch(type) {
-            case 'success':
-                bgClass = 'bg-success';
-                iconClass = 'bi-check-circle-fill';
-                titleText = 'موفقیت';
-                break;
-            case 'danger':
-            case 'error':
-                bgClass = 'bg-danger';
-                iconClass = 'bi-exclamation-triangle-fill';
-                titleText = 'خطا';
-                break;
-            case 'warning':
-                bgClass = 'bg-warning';
-                iconClass = 'bi-exclamation-triangle-fill';
-                titleText = 'توجه';
-                break;
-            default:
-                bgClass = 'bg-info';
-                iconClass = 'bi-info-circle-fill';
-                titleText = 'اطلاعات';
-        }
-        
-        const toastHTML = `
-            <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="d-flex align-items-center">
-                    <div class="toast-icon">
-                        <i class="bi ${iconClass}"></i>
-                    </div>
-                    <div class="toast-body flex-grow-1">
-                        <div class="toast-title">${titleText}</div>
-                        <div class="toast-message">${message}</div>
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2" data-bs-dismiss="toast" aria-label="بستن"></button>
-                </div>
-            </div>
-        `;
-        
-        toastContainer.insertAdjacentHTML('beforeend', toastHTML);
-        
-        const toastElement = document.getElementById(toastId);
-        const toast = new bootstrap.Toast(toastElement, {
-            delay: duration,
-            autohide: true
-        });
-        
-        // افکت ورود
-        setTimeout(() => {
-            toast.show();
-        }, 100);
-        
-        // پخش صدای اختیاری
-        playNotificationSound(type);
-        
-        // حذف عنصر پس از بسته شدن
-        toastElement.addEventListener('hidden.bs.toast', function() {
-            this.remove();
-        });
-        
-        // اضافه کردن قابلیت کلیک برای بستن
-        toastElement.addEventListener('click', function(e) {
-            if (!e.target.closest('.btn-close')) {
-                toast.hide();
-            }
-        });
-        
-        return toast;
-    }
-    
-    // تابع پخش صدای اختیاری
-    function playNotificationSound(type) {
-        // فعلاً غیرفعال - می‌تواند بعداً اضافه شود
-        // try {
-        //     const audio = new Audio();
-        //     switch(type) {
-        //         case 'success': audio.src = '/static/sounds/success.mp3'; break;
-        //         case 'error': audio.src = '/static/sounds/error.mp3'; break;
-        //         default: return;
-        //     }
-        //     audio.volume = 0.3;
-        //     audio.play().catch(() => {});
-        // } catch(e) {}
-    }
-
-    // توابع مشترک
-    function getMethodBadgeClass(method) {
-        const classes = {
-            'GET': 'bg-success',
-            'POST': 'bg-primary', 
-            'PUT': 'bg-warning',
-            'DELETE': 'bg-danger',
-            'PATCH': 'bg-info',
-            'HEAD': 'bg-secondary',
-            'OPTIONS': 'bg-dark'
-        };
-        return classes[method] || 'bg-secondary';
-    }
-
-    function formatResponseTime(milliseconds) {
-        if (!milliseconds) return '-';
-        if (milliseconds < 1000) {
-            return milliseconds + ' ms';
-        }
-        return (milliseconds / 1000).toFixed(2) + ' s';
-    }
-    </script>
-    
-    {% block extra_js %}{% endblock %}
-
     <script>
     // تنظیم CSRF token برای درخواست‌های Ajax
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
@@ -546,6 +615,10 @@
             return Promise.reject(error);
         }
     );
+    
+    console.log('✅ Base configuration completed - Navigation is now free!');
     </script>
+    
+    {% block extra_js %}{% endblock %}
 </body>
 </html> 

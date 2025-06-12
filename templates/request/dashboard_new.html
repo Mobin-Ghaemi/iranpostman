@@ -106,12 +106,43 @@
                 </div>
                 <div class="col-md-8">
                     <input type="url" class="form-control" id="url" name="url" 
-                           placeholder="https://api.example.com/endpoint" required>
+                           placeholder="https://jsonplaceholder.typicode.com/posts/1" required>
+                    <div class="form-text">
+                        <small class="text-muted">
+                            💡 مثال: https://jsonplaceholder.typicode.com/posts/1 (برای تست)<br>
+                            🔹 <strong>تست سرور:</strong> بررسی اتصال با سرور Iran Postman<br>
+                            🔹 <strong>پر کردن سریع:</strong> وارد کردن URL نمونه برای تست سریع
+                        </small>
+                    </div>
                 </div>
                 <div class="col-md-2">
                     <button type="submit" class="btn btn-primary w-100" id="send-btn">
                         <i class="bi bi-send"></i> ارسال
                     </button>
+                    <button type="button" class="btn btn-outline-info w-100 mt-1" id="test-btn">
+                        <i class="bi bi-wifi"></i> تست سرور
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary w-100 mt-1" id="quick-fill-btn">
+                        <i class="bi bi-lightning"></i> پر کردن سریع
+                    </button>
+                    <button type="button" class="btn btn-outline-warning w-100 mt-1" id="test-nav-btn">
+                        <i class="bi bi-bug"></i> تست Navigation
+                    </button>
+                </div>
+            </div>
+            
+            <!-- پیش‌نمایش URL نهایی -->
+            <div class="url-preview-section" style="display: none;">
+                <div class="alert alert-info">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong><i class="bi bi-link-45deg"></i> URL نهایی:</strong>
+                            <span id="final-url-display">URL را تکمیل کنید...</span>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="copy-final-url">
+                            <i class="bi bi-clipboard"></i> کپی
+                        </button>
+                    </div>
                 </div>
             </div>
             
@@ -175,10 +206,19 @@
                         <option value="none">هیچ</option>
                         <option value="raw">Raw</option>
                         <option value="form-data">Form Data</option>
+                        <option value="x-www-form-urlencoded">URL Encoded</option>
                     </select>
                     
+                    <div id="body-none-section">
+                        <div class="text-center p-4 text-muted">
+                            <i class="bi bi-info-circle h4 mb-2"></i>
+                            <p>هیچ محتوایی ارسال نخواهد شد</p>
+                        </div>
+                    </div>
+                    
                     <div id="body-raw-section" style="display: none;">
-                        <textarea class="form-control font-monospace" id="body-raw" rows="4"></textarea>
+                        <textarea class="form-control font-monospace" id="body-raw" rows="4" 
+                                  placeholder="محتوای درخواست را اینجا وارد کنید..."></textarea>
                         <div class="mt-2">
                             <button type="button" class="btn btn-outline-success btn-sm" id="fix-json">
                                 <i class="bi bi-tools"></i> تصحیح JSON
@@ -187,6 +227,63 @@
                                 <i class="bi bi-plus-circle"></i> ساخت JSON
                             </button>
                         </div>
+                    </div>
+                    
+                    <div id="body-form-data-section" style="display: none;">
+                        <h6 class="fw-bold mb-3">داده‌های فرم</h6>
+                        <div id="form-data-container">
+                            <div class="row mb-2 form-data-row">
+                                <div class="col-md-4">
+                                    <input type="text" class="form-control form-data-key" placeholder="نام فیلد">
+                                </div>
+                                <div class="col-md-2">
+                                    <select class="form-select form-data-type">
+                                        <option value="text">Text</option>
+                                        <option value="file">File</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="text" class="form-control form-data-value" placeholder="مقدار">
+                                    <input type="file" class="form-control form-data-file" style="display: none;">
+                                </div>
+                                <div class="col-md-1">
+                                    <input class="form-check-input form-data-enabled" type="checkbox" checked>
+                                </div>
+                                <div class="col-md-1">
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-form-data">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="add-form-data">
+                            <i class="bi bi-plus"></i> افزودن فیلد
+                        </button>
+                    </div>
+                    
+                    <div id="body-urlencoded-section" style="display: none;">
+                        <h6 class="fw-bold mb-3">داده‌های URL Encoded</h6>
+                        <div id="urlencoded-container">
+                            <div class="row mb-2 urlencoded-row">
+                                <div class="col-md-5">
+                                    <input type="text" class="form-control urlencoded-key" placeholder="نام پارامتر">
+                                </div>
+                                <div class="col-md-5">
+                                    <input type="text" class="form-control urlencoded-value" placeholder="مقدار">
+                                </div>
+                                <div class="col-md-1">
+                                    <input class="form-check-input urlencoded-enabled" type="checkbox" checked>
+                                </div>
+                                <div class="col-md-1">
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-urlencoded">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="add-urlencoded">
+                            <i class="bi bi-plus"></i> افزودن پارامتر
+                        </button>
                     </div>
                 </div>
             </div>
@@ -293,7 +390,17 @@
                 <div class="card-header d-flex justify-content-between">
                     <h6 class="mb-0"><i class="bi bi-clock-history"></i> تاریخچه اخیر</h6>
                     {% if user.is_authenticated %}
-                        <a href="{% url 'request:history' %}" class="btn btn-outline-primary btn-sm">همه</a>
+                        <a href="{% url 'request:history' %}" 
+                           class="btn btn-outline-primary btn-sm" 
+                           onclick="console.log('📊 Navigating to full history page:', this.href);">
+                           همه
+                        </a>
+                    {% else %}
+                        <span class="btn btn-outline-secondary btn-sm disabled" 
+                              title="برای مشاهده تاریخچه کامل ابتدا وارد شوید"
+                              onclick="showAlert('برای مشاهده تاریخچه کامل ابتدا وارد شوید', 'warning');">
+                              همه <i class="bi bi-lock-fill"></i>
+                        </span>
                     {% endif %}
                 </div>
                 <div class="card-body">
@@ -367,13 +474,94 @@ async function loadDashboardStats() {
 
 // مدیریت تب‌ها (بدون ارسال خودکار)
 document.getElementById('body-type').addEventListener('change', function() {
-    const section = document.getElementById('body-raw-section');
-    section.style.display = this.value === 'raw' ? 'block' : 'none';
+    const bodyType = this.value;
+    
+    // مخفی کردن همه بخش‌ها
+    document.getElementById('body-none-section').style.display = 'none';
+    document.getElementById('body-raw-section').style.display = 'none';
+    document.getElementById('body-form-data-section').style.display = 'none';
+    document.getElementById('body-urlencoded-section').style.display = 'none';
+    
+    // نمایش بخش مربوطه
+    switch(bodyType) {
+        case 'none':
+            document.getElementById('body-none-section').style.display = 'block';
+            break;
+        case 'raw':
+            document.getElementById('body-raw-section').style.display = 'block';
+            break;
+        case 'form-data':
+            document.getElementById('body-form-data-section').style.display = 'block';
+            break;
+        case 'x-www-form-urlencoded':
+            document.getElementById('body-urlencoded-section').style.display = 'block';
+            break;
+    }
 });
 
-// JSON Tools
+// بروزرسانی URL نهایی
+function updateFinalUrl() {
+    const baseUrl = document.getElementById('url').value.trim();
+    const urlDisplay = document.getElementById('final-url-display');
+    const urlSection = document.querySelector('.url-preview-section');
+    
+    if (!baseUrl) {
+        urlSection.style.display = 'none';
+        return;
+    }
+    
+    // جمع‌آوری پارامترهای فعال
+    const params = [];
+    document.querySelectorAll('.param-row').forEach(row => {
+        const key = row.querySelector('.param-key').value.trim();
+        const value = row.querySelector('.param-value').value.trim();
+        const enabled = row.querySelector('.param-enabled').checked;
+        if (key && value && enabled) {
+            params.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
+        }
+    });
+    
+    let finalUrl = baseUrl;
+    if (params.length > 0) {
+        const separator = baseUrl.includes('?') ? '&' : '?';
+        finalUrl += separator + params.join('&');
+    }
+    
+    urlDisplay.textContent = finalUrl;
+    urlSection.style.display = 'block';
+}
+
+// Event listeners برای بروزرسانی URL
+document.getElementById('url').addEventListener('input', updateFinalUrl);
+document.addEventListener('input', function(e) {
+    if (e.target.classList.contains('param-key') || e.target.classList.contains('param-value')) {
+        updateFinalUrl();
+    }
+});
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('param-enabled')) {
+        updateFinalUrl();
+    }
+});
+
+// کپی کردن URL نهایی
+document.getElementById('copy-final-url').addEventListener('click', function() {
+    const finalUrl = document.getElementById('final-url-display').textContent;
+    if (finalUrl && finalUrl !== 'URL را تکمیل کنید...') {
+        navigator.clipboard.writeText(finalUrl).then(() => {
+            showAlert('URL کپی شد!', 'success', 2000);
+        }).catch(() => {
+            showAlert('خطا در کپی کردن URL', 'error');
+        });
+    }
+});
+
+// JSON Tools - فقط JSON معیوب رو تصحیح کن
 document.addEventListener('click', function(e) {
-    e.preventDefault(); // جلوگیری از ارسال فرم
+    // فقط برای دکمه‌های خاص preventDefault کن، نه همه کلیک‌ها!
+    if (e.target.closest('#fix-json') || e.target.closest('#create-json')) {
+        e.preventDefault(); // جلوگیری از ارسال فرم
+    }
     
     if (e.target.closest('#fix-json')) {
         const textarea = document.getElementById('body-raw');
@@ -384,18 +572,67 @@ document.addEventListener('click', function(e) {
             return;
         }
         
-        try {
-            // سعی کن JSON پارس کنی
-            const parsed = JSON.parse(content);
-            textarea.value = JSON.stringify(parsed, null, 2);
-            showAlert('JSON تصحیح شد!', 'success');
-        } catch (e) {
-            // اگر نشد، متن ساده رو تبدیل کن
-            const key = prompt('نام کلید:', 'data') || 'data';
-            const result = {};
-            result[key] = content;
-            textarea.value = JSON.stringify(result, null, 2);
-            showAlert('متن به JSON تبدیل شد!', 'success');
+        // بررسی اینکه آیا محتوا شبیه JSON است (شروع با { یا [)
+        if (content.startsWith('{') || content.startsWith('[')) {
+            try {
+                // تلاش برای تصحیح JSON معیوب
+                let fixedContent = content;
+                
+                // حذف کامنت‌های مختلف (انگلیسی و فارسی)
+                fixedContent = fixedContent.replace(/\/\/.*$/gm, ''); // کامنت‌های //
+                fixedContent = fixedContent.replace(/\/\*[\s\S]*?\*\//g, ''); // کامنت‌های /* */
+                
+                // حذف کاما اضافی قبل از } یا ]
+                fixedContent = fixedContent.replace(/,(\s*[}\]])/g, '$1');
+                
+                // اضافه کردن گیومه برای کلیدهای بدون گیومه
+                fixedContent = fixedContent.replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":');
+                
+                // تصحیح گیومه‌های تک به دابل
+                fixedContent = fixedContent.replace(/'/g, '"');
+                
+                // حذف فاصله‌های اضافی
+                fixedContent = fixedContent.replace(/\s+/g, ' ').trim();
+                
+                // تلاش برای parse کردن
+                const parsed = JSON.parse(fixedContent);
+                textarea.value = JSON.stringify(parsed, null, 2);
+                showAlert('JSON معیوب با موفقیت تصحیح شد!', 'success');
+                
+            } catch (error) {
+                console.error('خطا در تصحیح JSON:', error);
+                
+                // اگر هنوز پارس نشد، تلاش برای تصحیح دستی بیشتر
+                try {
+                    let manualFix = content;
+                    
+                    // حذف همه نوع کامنت
+                    manualFix = manualFix.replace(/\/\/[^\r\n]*/g, '');
+                    manualFix = manualFix.replace(/\/\*[\s\S]*?\*\//g, '');
+                    
+                    // حذف کامنت‌های در پرانتز
+                    manualFix = manualFix.replace(/\([^)]*\)/g, '');
+                    
+                    // تصحیح null values
+                    manualFix = manualFix.replace(/:\s*null/g, ': null');
+                    
+                    // حذف کاما آخر
+                    manualFix = manualFix.replace(/,(\s*[}\]])/g, '$1');
+                    
+                    // اضافه کردن گیومه برای کلیدها
+                    manualFix = manualFix.replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":');
+                    
+                    const parsed2 = JSON.parse(manualFix);
+                    textarea.value = JSON.stringify(parsed2, null, 2);
+                    showAlert('JSON با تصحیح دستی برطرف شد!', 'success');
+                    
+                } catch (error2) {
+                    showAlert('این JSON خیلی معیوب است و قابل تصحیح نیست. لطفاً دستی درست کنید.', 'warning');
+                    console.error('خطا در تصحیح دستی:', error2);
+                }
+            }
+        } else {
+            showAlert('این محتوا JSON نیست. برای ساخت JSON از دکمه "ساخت JSON" استفاده کنید', 'info');
         }
     }
     
@@ -403,6 +640,368 @@ document.addEventListener('click', function(e) {
         createSimpleJsonBuilder();
     }
 });
+
+// افزودن/حذف پارامتر
+document.getElementById('add-param').addEventListener('click', function(e) {
+    e.preventDefault();
+    const container = document.getElementById('params-container');
+    const newRow = container.querySelector('.param-row').cloneNode(true);
+    newRow.querySelectorAll('input[type="text"]').forEach(input => input.value = '');
+    newRow.querySelector('.param-enabled').checked = true;
+    container.appendChild(newRow);
+    updateFinalUrl();
+});
+
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.remove-param')) {
+        const paramRows = document.querySelectorAll('.param-row');
+        if (paramRows.length > 1) {
+            e.target.closest('.param-row').remove();
+            updateFinalUrl();
+        }
+    }
+});
+
+// افزودن/حذف هدر
+document.getElementById('add-header').addEventListener('click', function(e) {
+    e.preventDefault();
+    const container = document.getElementById('headers-container');
+    const newRow = container.querySelector('.header-row').cloneNode(true);
+    newRow.querySelectorAll('input[type="text"]').forEach(input => input.value = '');
+    newRow.querySelector('.header-enabled').checked = true;
+    container.appendChild(newRow);
+});
+
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.remove-header')) {
+        const headerRows = document.querySelectorAll('.header-row');
+        if (headerRows.length > 1) {
+            e.target.closest('.header-row').remove();
+        }
+    }
+});
+
+// مدیریت Form Data
+document.getElementById('add-form-data').addEventListener('click', function(e) {
+    e.preventDefault();
+    const container = document.getElementById('form-data-container');
+    const newRow = container.querySelector('.form-data-row').cloneNode(true);
+    newRow.querySelectorAll('input[type="text"]').forEach(input => input.value = '');
+    newRow.querySelector('.form-data-enabled').checked = true;
+    newRow.querySelector('.form-data-type').value = 'text';
+    newRow.querySelector('.form-data-value').style.display = 'block';
+    newRow.querySelector('.form-data-file').style.display = 'none';
+    container.appendChild(newRow);
+});
+
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.remove-form-data')) {
+        const formDataRows = document.querySelectorAll('.form-data-row');
+        if (formDataRows.length > 1) {
+            e.target.closest('.form-data-row').remove();
+        }
+    }
+});
+
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('form-data-type')) {
+        const row = e.target.closest('.form-data-row');
+        const textInput = row.querySelector('.form-data-value');
+        const fileInput = row.querySelector('.form-data-file');
+        
+        if (e.target.value === 'file') {
+            textInput.style.display = 'none';
+            fileInput.style.display = 'block';
+        } else {
+            textInput.style.display = 'block';
+            fileInput.style.display = 'none';
+        }
+    }
+});
+
+// مدیریت URL Encoded
+document.getElementById('add-urlencoded').addEventListener('click', function(e) {
+    e.preventDefault();
+    const container = document.getElementById('urlencoded-container');
+    const newRow = container.querySelector('.urlencoded-row').cloneNode(true);
+    newRow.querySelectorAll('input[type="text"]').forEach(input => input.value = '');
+    newRow.querySelector('.urlencoded-enabled').checked = true;
+    container.appendChild(newRow);
+});
+
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.remove-urlencoded')) {
+        const urlencodedRows = document.querySelectorAll('.urlencoded-row');
+        if (urlencodedRows.length > 1) {
+            e.target.closest('.urlencoded-row').remove();
+        }
+    }
+});
+
+// بارگذاری اولیه
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 صفحه بارگذاری شد');
+    console.log('👤 User:', '{{ user.username|default:"Guest" }}');
+    console.log('🔐 CSRF Token check:', document.querySelector('[name=csrfmiddlewaretoken]') ? 'موجود' : 'ناموجود');
+    console.log('📡 Axios available:', typeof axios !== 'undefined');
+    console.log('🌐 Base URL:', window.location.origin);
+    
+    // تست اولیه آدرس‌ها
+    console.log('🔗 Testing API endpoints:');
+    console.log('   - Dashboard Stats:', '/request/api/dashboard-stats/');
+    console.log('   - Quick Request:', '/request/api/quick-request/');
+    
+    // بررسی element های مهم
+    const form = document.getElementById('quick-request-form');
+    const sendBtn = document.getElementById('send-btn');
+    const urlInput = document.getElementById('url');
+    
+    console.log('📋 Form elements check:');
+    console.log('   - Form:', form ? 'موجود' : '❌ ناموجود');
+    console.log('   - Send Button:', sendBtn ? 'موجود' : '❌ ناموجود');
+    console.log('   - URL Input:', urlInput ? 'موجود' : '❌ ناموجود');
+    
+    // اضافه کردن event listener اضافی برای مطمئن شدن
+    if (form && sendBtn) {
+        console.log('✅ اضافه کردن event listeners...');
+        
+        // Event listener اضافی برای دکمه
+        sendBtn.addEventListener('click', function(e) {
+            console.log('🖱️ دکمه ارسال کلیک شد (مستقیم)');
+            e.preventDefault();
+            
+            // فراخوانی تابع ارسال به صورت مستقیم
+            handleFormSubmission();
+        });
+        
+        // Event listener برای فرم
+        form.addEventListener('submit', function(e) {
+            console.log('📋 فرم submit شد');
+            e.preventDefault();
+            handleFormSubmission();
+        });
+    } else {
+        console.error('❌ عناصر فرم یافت نشدند!');
+    }
+    
+    loadDashboardStats();
+    // نمایش بخش none به عنوان پیش‌فرض
+    document.getElementById('body-none-section').style.display = 'block';
+});
+
+// تابع مستقل برای کنترل ارسال فرم
+async function handleFormSubmission() {
+    console.log('⚡ شروع پردازش درخواست...');
+    
+    if (isRequestInProgress) {
+        console.log('⏳ درخواست قبلی در حال پردازش است');
+        showAlert('درخواست قبلی در حال پردازش است', 'warning');
+        return;
+    }
+    
+    const sendBtn = document.getElementById('send-btn');
+    const urlInput = document.getElementById('url');
+    
+    if (!sendBtn || !urlInput) {
+        console.error('❌ عناصر فرم یافت نشدند');
+        showAlert('خطا در یافتن عناصر فرم', 'error');
+        return;
+    }
+    
+    const url = urlInput.value.trim();
+    console.log('🌐 URL:', url);
+    
+    if (!url) {
+        console.log('❌ URL خالی است');
+        showAlert('لطفاً URL را وارد کنید', 'warning');
+        urlInput.focus();
+        return;
+    }
+    
+    // بررسی فرمت URL
+    try {
+        new URL(url);
+        console.log('✅ URL معتبر است');
+    } catch (e) {
+        console.log('❌ URL نامعتبر:', e.message);
+        showAlert('لطفاً یک URL معتبر وارد کنید (مثال: https://google.com)', 'warning');
+        urlInput.focus();
+        return;
+    }
+    
+    const originalText = sendBtn.innerHTML;
+    
+    console.log('🔄 شروع ارسال درخواست...');
+    isRequestInProgress = true;
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> در حال ارسال...';
+    
+    try {
+        // جمع‌آوری داده‌ها
+        console.log('📊 جمع‌آوری داده‌های فرم...');
+        
+        const params = {};
+        document.querySelectorAll('.param-row').forEach((row, index) => {
+            const key = row.querySelector('.param-key')?.value?.trim();
+            const value = row.querySelector('.param-value')?.value?.trim();
+            const enabled = row.querySelector('.param-enabled')?.checked;
+            console.log(`   Param ${index}: ${key}=${value} (${enabled ? 'فعال' : 'غیرفعال'})`);
+            if (key && value && enabled) params[key] = value;
+        });
+        
+        const headers = {};
+        document.querySelectorAll('.header-row').forEach((row, index) => {
+            const key = row.querySelector('.header-key')?.value?.trim();
+            const value = row.querySelector('.header-value')?.value?.trim();
+            const enabled = row.querySelector('.header-enabled')?.checked;
+            console.log(`   Header ${index}: ${key}=${value} (${enabled ? 'فعال' : 'غیرفعال'})`);
+            if (key && value && enabled) headers[key] = value;
+        });
+        
+        const method = document.getElementById('method')?.value || 'GET';
+        const bodyType = document.getElementById('body-type')?.value || 'none';
+        
+        console.log('📋 اطلاعات کلی:');
+        console.log('   Method:', method);
+        console.log('   Body Type:', bodyType);
+        console.log('   Params:', params);
+        console.log('   Headers:', headers);
+        
+        let bodyData = '';
+        let formData = {};
+        let urlencodedData = {};
+        
+        if (bodyType === 'raw') {
+            bodyData = document.getElementById('body-raw')?.value || '';
+            console.log('   Raw Body:', bodyData.substring(0, 100) + (bodyData.length > 100 ? '...' : ''));
+        }
+        
+        const requestData = {
+            method: method,
+            url: url,
+            params: params,
+            headers: headers,
+            body_type: bodyType,
+            body_raw: bodyData,
+            body_form_data: formData,
+            body_urlencoded: urlencodedData
+        };
+        
+        console.log('📤 ارسال داده‌ها به سرور:', requestData);
+        
+        // دریافت CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        console.log('🔐 CSRF Token:', csrfToken ? 'موجود ✅' : 'ناموجود ❌');
+        
+        const requestConfig = {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken || ''
+            },
+            timeout: 30000
+        };
+        
+        console.log('⏰ ارسال درخواست به /request/api/quick-request/...');
+        const startTime = Date.now();
+        
+        const response = await axios.post('/request/api/quick-request/', requestData, requestConfig);
+        
+        const endTime = Date.now();
+        const responseTime = endTime - startTime;
+        
+        console.log('✅ پاسخ دریافت شد در', responseTime, 'میلی‌ثانیه');
+        console.log('📨 Response:', response.data);
+        
+        // نمایش پاسخ
+        displayResponse(response.data);
+        
+        // فقط برای درخواست‌های موفق alert نمایش بده
+        if (response.data.is_success) {
+            console.log('✅ درخواست موفق - بدون alert');
+        } else {
+            console.log('❌ درخواست ناموفق - response نمایش داده شد');
+        }
+        
+        // بروزرسانی آمار
+        try {
+            await loadDashboardStats();
+        } catch (statsError) {
+            console.warn('⚠️ خطا در بروزرسانی آمار:', statsError);
+        }
+        
+    } catch (error) {
+        console.error('❌ خطا در ارسال درخواست:', error);
+        console.error('📋 جزئیات خطا:', {
+            message: error.message,
+            response: error.response?.data,
+            status: error.response?.status,
+            config: error.config
+        });
+        
+        let errorMessage = 'خطای نامشخص در ارسال درخواست';
+        let errorDetails = {};
+        
+        if (error.response) {
+            // خطای HTTP
+            errorMessage = `خطای HTTP ${error.response.status}`;
+            errorDetails = error.response.data || {};
+            
+            if (error.response.status === 0) {
+                errorMessage = 'خطا در اتصال به سرور';
+            } else if (error.response.status === 404) {
+                errorMessage = 'آدرس API یافت نشد';
+            } else if (error.response.status === 500) {
+                errorMessage = 'خطای داخلی سرور';
+            } else if (error.response.data?.error) {
+                errorMessage = error.response.data.error;
+            }
+        } else if (error.request) {
+            // خطای شبکه
+            errorMessage = 'خطا در اتصال به سرور - لطفاً اتصال اینترنت را بررسی کنید';
+        } else {
+            // خطای دیگر
+            errorMessage = error.message || 'خطای نامشخص';
+        }
+        
+        // نمایش خطا در response section
+        displayResponse({
+            is_success: false,
+            status_code: error.response?.status || 'خطا',
+            response_time: null,
+            response_size: null,
+            response_body: JSON.stringify({
+                error: errorMessage,
+                details: errorDetails,
+                url: url,
+                method: method,
+                timestamp: new Date().toISOString(),
+                debug: {
+                    axios_error: error.message,
+                    has_response: !!error.response,
+                    has_request: !!error.request
+                }
+            }, null, 2),
+            response_headers: error.response?.headers || {}
+        });
+        
+        // فقط برای خطاهای اتصال یا validation alert نمایش بده
+        if (!error.response) {
+            // خطای شبکه یا اتصال
+            showAlert('خطا در اتصال: ' + errorMessage, 'error', 5000);
+        } else if (error.response.status >= 500) {
+            // خطای سرور که ممکن است مربوط به کد باشد
+            console.log('🔧 خطای سرور:', errorMessage);
+        } else {
+            // خطاهای HTTP عادی که در response نمایش داده می‌شوند
+            console.log('📋 خطای HTTP:', error.response.status, errorMessage);
+        }
+    } finally {
+        console.log('🏁 پایان پردازش درخواست');
+        isRequestInProgress = false;
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = originalText;
+    }
+}
 
 // سازنده JSON ساده
 function createSimpleJsonBuilder() {
@@ -416,30 +1015,6 @@ function createSimpleJsonBuilder() {
         showAlert('JSON ایجاد شد!', 'success');
     }
 }
-
-// افزودن پارامتر/هدر
-document.getElementById('add-param').addEventListener('click', function(e) {
-    e.preventDefault();
-    const container = document.getElementById('params-container');
-    const newRow = container.querySelector('.param-row').cloneNode(true);
-    newRow.querySelectorAll('input[type="text"]').forEach(input => input.value = '');
-    container.appendChild(newRow);
-});
-
-document.getElementById('add-header').addEventListener('click', function(e) {
-    e.preventDefault();
-    const container = document.getElementById('headers-container');
-    const newRow = container.querySelector('.header-row').cloneNode(true);
-    newRow.querySelectorAll('input[type="text"]').forEach(input => input.value = '');
-    container.appendChild(newRow);
-});
-
-// پاک کردن پاسخ
-document.addEventListener('click', function(e) {
-    if (e.target.closest('#clear-response')) {
-        document.getElementById('response-section').style.display = 'none';
-    }
-});
 
 // نمایش پاسخ
 function displayResponse(result) {
@@ -488,83 +1063,250 @@ function displayResponse(result) {
     responseSection.scrollIntoView({ behavior: 'smooth' });
 }
 
-// ارسال درخواست - فقط با کلیک روی دکمه ارسال
-document.getElementById('quick-request-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    if (isRequestInProgress) {
-        showAlert('درخواست قبلی در حال پردازش است', 'warning');
-        return;
+// پاک کردن پاسخ
+document.addEventListener('click', function(e) {
+    if (e.target.closest('#clear-response')) {
+        document.getElementById('response-section').style.display = 'none';
     }
+});
+
+// دکمه تست
+document.getElementById('test-btn').addEventListener('click', async function() {
+    console.log('🔧 دکمه تست کلیک شد');
     
-    const sendBtn = document.getElementById('send-btn');
-    const originalText = sendBtn.innerHTML;
-    
-    isRequestInProgress = true;
-    sendBtn.disabled = true;
-    sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> در حال ارسال...';
+    // نمایش اطلاعات اولیه
+    console.log('User authenticated:', '{{ user.is_authenticated|yesno:"yes,no" }}');
+    console.log('CSRF token:', document.querySelector('[name=csrfmiddlewaretoken]')?.value);
+    console.log('Axios available:', typeof axios !== 'undefined');
     
     try {
-        // جمع‌آوری داده‌ها
-        const params = {};
-        document.querySelectorAll('.param-row').forEach(row => {
-            const key = row.querySelector('.param-key').value.trim();
-            const value = row.querySelector('.param-value').value.trim();
-            const enabled = row.querySelector('.param-enabled').checked;
-            if (key && value && enabled) params[key] = value;
+        // تست ساده برای dashboard stats
+        console.log('تست ارتباط با سرور...');
+        const response = await axios.get('/request/api/dashboard-stats/');
+        console.log('پاسخ dashboard stats:', response.data);
+        
+        // نمایش response ساده
+        displayResponse({
+            is_success: true,
+            status_code: 200,
+            response_time: '50ms',
+            response_size: 250,
+            response_body: JSON.stringify({
+                message: 'تست ارتباط با سرور موفق بود',
+                data: response.data,
+                timestamp: new Date().toISOString()
+            }, null, 2),
+            response_headers: {
+                'content-type': 'application/json',
+                'server': 'Django'
+            }
         });
         
-        const headers = {};
-        document.querySelectorAll('.header-row').forEach(row => {
-            const key = row.querySelector('.header-key').value.trim();
-            const value = row.querySelector('.header-value').value.trim();
-            const enabled = row.querySelector('.header-enabled').checked;
-            if (key && value && enabled) headers[key] = value;
-        });
-        
-        const requestData = {
-            method: document.getElementById('method').value,
-            url: document.getElementById('url').value,
-            params: params,
-            headers: headers,
-            body_type: document.getElementById('body-type').value,
-            body_raw: document.getElementById('body-raw').value || ''
-        };
-        
-        const response = await axios.post('/request/api/quick-request/', requestData);
-        const result = response.data;
-        
-        // نمایش پاسخ در section جدید
-        displayResponse(result);
-        
-        // نمایش پیام موفقیت کوتاه
-        showAlert('درخواست ارسال شد', 'success', 2000);
-        
-        // بروزرسانی آمار
-        loadDashboardStats();
+        showAlert('تست ارتباط با سرور موفق بود!', 'success');
         
     } catch (error) {
-        const errorMsg = error.response?.data?.error || error.message || 'خطای نامشخص';
+        console.error('خطا در تست:', error);
         
-        // نمایش خطا در section پاسخ
         displayResponse({
             is_success: false,
             status_code: error.response?.status || 'خطا',
             response_time: null,
             response_size: null,
-            response_body: errorMsg,
-            response_headers: {}
+            response_body: JSON.stringify({
+                error: 'خطا در تست ارتباط',
+                message: error.message,
+                details: error.response?.data || {},
+                config: {
+                    url: error.config?.url,
+                    method: error.config?.method
+                }
+            }, null, 2),
+            response_headers: error.response?.headers || {}
         });
         
-        showAlert('خطا در ارسال درخواست', 'error', 3000);
-    } finally {
-        isRequestInProgress = false;
-        sendBtn.disabled = false;
-        sendBtn.innerHTML = originalText;
+        showAlert('خطا در تست ارتباط: ' + error.message, 'error');
     }
 });
 
-// بارگذاری اولیه
-document.addEventListener('DOMContentLoaded', loadDashboardStats);
+// دکمه پر کردن سریع URL تست
+document.getElementById('quick-fill-btn').addEventListener('click', function() {
+    console.log('⚡ پر کردن سریع URL نمونه');
+    
+    const urlInput = document.getElementById('url');
+    if (urlInput) {
+        urlInput.value = 'https://jsonplaceholder.typicode.com/posts/1';
+        urlInput.focus();
+        showAlert('URL نمونه وارد شد - حالا روی ارسال کلیک کنید', 'info', 3000);
+        console.log('✅ URL نمونه در input قرار گرفت');
+        
+        // بروزرسانی URL نهایی
+        updateFinalUrl();
+    } else {
+        console.error('❌ فیلد URL یافت نشد');
+        showAlert('خطا در یافتن فیلد URL', 'error');
+    }
+});
+
+// دکمه تست Navigation
+document.getElementById('test-nav-btn').addEventListener('click', function() {
+    console.log('🐛 شروع تست جامع Navigation...');
+    
+    const testResults = {
+        total: 0,
+        working: 0,
+        failed: 0,
+        details: [],
+        clickTests: []
+    };
+    
+    // بررسی همه لینک‌های navigation
+    const navLinks = document.querySelectorAll('.sidebar .nav-link:not(.disabled)');
+    console.log(`🔍 Testing ${navLinks.length} navigation links...`);
+    
+    testResults.total = navLinks.length;
+    
+    // تست 1: URL Accessibility
+    console.log('📡 Phase 1: Testing URL accessibility...');
+    navLinks.forEach((link, index) => {
+        const href = link.getAttribute('href');
+        const text = link.textContent.trim();
+        
+        if (href && href !== '#' && href !== '') {
+            fetch(href, { method: 'HEAD' })
+                .then(response => {
+                    const status = response.ok ? '✅ OK' : '❌ Failed';
+                    console.log(`   ${index + 1}. "${text}" (${href}) -> ${response.status} ${status}`);
+                    
+                    if (response.ok) {
+                        testResults.working++;
+                    } else {
+                        testResults.failed++;
+                    }
+                    
+                    testResults.details.push({
+                        text,
+                        href,
+                        status: response.status,
+                        ok: response.ok
+                    });
+                    
+                    // اگر همه تست‌های URL تمام شد، تست کلیک رو شروع کن
+                    if (testResults.details.length === testResults.total) {
+                        testClickBehavior(navLinks, testResults);
+                    }
+                })
+                .catch(error => {
+                    console.log(`   ${index + 1}. "${text}" (${href}) -> ERROR: ${error.message} ❌`);
+                    testResults.failed++;
+                    testResults.details.push({
+                        text,
+                        href,
+                        status: 'ERROR',
+                        ok: false,
+                        error: error.message
+                    });
+                    
+                    if (testResults.details.length === testResults.total) {
+                        testClickBehavior(navLinks, testResults);
+                    }
+                });
+        }
+    });
+    
+    if (testResults.total === 0) {
+        showAlert('هیچ لینک navigation قابل تست یافت نشد!', 'warning');
+        console.log('⚠️ No testable navigation links found');
+    }
+});
+
+// تست رفتار کلیک
+function testClickBehavior(navLinks, testResults) {
+    console.log('🖱️ Phase 2: Testing click behavior...');
+    
+    navLinks.forEach((link, index) => {
+        const href = link.getAttribute('href');
+        const text = link.textContent.trim();
+        
+        // بررسی ویژگی‌های لینک
+        const linkInfo = {
+            text,
+            href,
+            hasHref: !!href && href !== '#',
+            isDisabled: link.classList.contains('disabled'),
+            hasClickHandler: !!link.onclick,
+            pointerEvents: window.getComputedStyle(link).pointerEvents,
+            cursor: window.getComputedStyle(link).cursor
+        };
+        
+        console.log(`   Link ${index + 1}: "${text}"`, linkInfo);
+        testResults.clickTests.push(linkInfo);
+    });
+    
+    // نمایش نتایج نهایی
+    displayNavigationTestResults(testResults);
+}
+
+// نمایش نتایج تست navigation
+function displayNavigationTestResults(results) {
+    console.log('📊 Navigation Test Results:');
+    console.log(`   Total: ${results.total}`);
+    console.log(`   Working: ${results.working}`);
+    console.log(`   Failed: ${results.failed}`);
+    
+    const successRate = results.total > 0 ? ((results.working / results.total) * 100).toFixed(1) : 0;
+    
+    let message = `تست Navigation: ${results.working}/${results.total} موفق (${successRate}%)`;
+    let alertType = 'info';
+    
+    if (results.working === results.total) {
+        message = `همه لینک‌های Navigation کار می‌کنند! ✅`;
+        alertType = 'success';
+    } else if (results.failed > 0) {
+        message = `${results.failed} لینک Navigation مشکل دارد ❌`;
+        alertType = 'error';
+    }
+    
+    // بررسی مشکلات کلیک
+    const clickIssues = results.clickTests.filter(test => 
+        test.pointerEvents === 'none' || 
+        test.cursor === 'not-allowed' || 
+        !test.hasHref ||
+        test.isDisabled
+    );
+    
+    // نمایش در response section
+    displayResponse({
+        is_success: results.working === results.total && clickIssues.length === 0,
+        status_code: 'Test Results',
+        response_time: null,
+        response_size: null,
+        response_body: JSON.stringify({
+            message: 'Navigation Test Results',
+            summary: {
+                total: results.total,
+                working: results.working,
+                failed: results.failed,
+                success_rate: successRate + '%',
+                click_issues: clickIssues.length
+            },
+            url_tests: results.details,
+            click_tests: results.clickTests,
+            possible_issues: clickIssues,
+            recommendations: clickIssues.length > 0 ? [
+                'Check CSS pointer-events property',
+                'Verify href attributes',
+                'Check for JavaScript preventDefault calls',
+                'Ensure links are not disabled'
+            ] : ['All navigation links appear to be working correctly'],
+            timestamp: new Date().toISOString()
+        }, null, 2),
+        response_headers: {
+            'test-type': 'navigation-comprehensive',
+            'test-status': results.working === results.total && clickIssues.length === 0 ? 'all-pass' : 'issues-found'
+        }
+    });
+    
+    showAlert(message, alertType, 5000);
+}
 </script>
 {% endblock %} 

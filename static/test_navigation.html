@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 تست Navigation - Iran Postman</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body { 
+            font-family: 'Vazir', sans-serif; 
+            direction: rtl; 
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        .test-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+        .test-link {
+            display: block;
+            padding: 15px 20px;
+            margin: 10px 0;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        .test-link:hover {
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        .test-link i { margin-left: 10px; }
+        .status { 
+            padding: 8px 15px; 
+            border-radius: 20px; 
+            margin: 5px 0; 
+            display: inline-block;
+        }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.pending { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="text-center mb-4">
+                    <h1><i class="bi bi-bug-fill"></i> تست Navigation</h1>
+                    <p class="lead">این صفحه برای تست مشکل navigation ساخته شده</p>
+                </div>
+                
+                <div class="test-card">
+                    <h3><i class="bi bi-link-45deg"></i> تست لینک‌های مستقیم:</h3>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <a href="http://localhost:8000/" class="test-link">
+                                <i class="bi bi-house-door"></i> صفحه اصلی
+                            </a>
+                            <a href="http://localhost:8000/request/" class="test-link">
+                                <i class="bi bi-lightning-charge"></i> داشبورد
+                            </a>
+                            <a href="http://localhost:8000/login/" class="test-link">
+                                <i class="bi bi-box-arrow-in-right"></i> ورود
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="http://localhost:8000/request/collections/" class="test-link">
+                                <i class="bi bi-folder"></i> کالکشن‌ها
+                            </a>
+                            <a href="http://localhost:8000/request/history/" class="test-link">
+                                <i class="bi bi-clock-history"></i> تاریخچه
+                            </a>
+                            <a href="http://localhost:8000/request/environments/" class="test-link">
+                                <i class="bi bi-gear-wide-connected"></i> محیط‌ها
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="test-card">
+                    <h3><i class="bi bi-play-circle"></i> تست خودکار:</h3>
+                    <button class="btn btn-primary w-100 mb-3" onclick="testAllLinks()">
+                        <i class="bi bi-play-fill"></i> شروع تست
+                    </button>
+                    <div id="test-results"></div>
+                </div>
+                
+                <div class="test-card">
+                    <h3><i class="bi bi-info-circle"></i> راهنمای عیب‌یابی:</h3>
+                    <ol>
+                        <li><strong>اگر لینک‌ها کار نمی‌کنند:</strong> F12 را بزنید و Console را چک کنید</li>
+                        <li><strong>اگر صفحه redirect می‌شود:</strong> احتمالاً نیاز به login دارید</li>
+                        <li><strong>اگر 404 خطا:</strong> URL routing مشکل دارد</li>
+                        <li><strong>اگر 500 خطا:</strong> مشکل در کد Django است</li>
+                    </ol>
+                </div>
+                
+                <div class="test-card text-center">
+                    <p><strong>URL این صفحه:</strong></p>
+                    <code id="current-url">درحال بارگذاری...</code>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    // نمایش URL فعلی
+    document.getElementById('current-url').textContent = window.location.href;
+    
+    // تابع تست خودکار
+    async function testAllLinks() {
+        const results = document.getElementById('test-results');
+        const links = document.querySelectorAll('.test-link');
+        
+        results.innerHTML = '<div class="alert alert-info">در حال تست...</div>';
+        
+        let testResults = [];
+        
+        for (let i = 0; i < links.length; i++) {
+            const link = links[i];
+            const linkText = link.textContent.trim();
+            const url = link.href;
+            
+            try {
+                console.log(`Testing: ${linkText} -> ${url}`);
+                
+                const response = await fetch(url, { 
+                    method: 'GET',
+                    headers: { 'Accept': 'text/html' }
+                });
+                
+                if (response.ok) {
+                    testResults.push(`<div class="status success">✅ ${linkText} - موفق (${response.status})</div>`);
+                } else if (response.status === 302 || response.status === 301) {
+                    testResults.push(`<div class="status pending">🔄 ${linkText} - Redirect (${response.status})</div>`);
+                } else {
+                    testResults.push(`<div class="status error">❌ ${linkText} - خطا (${response.status})</div>`);
+                }
+            } catch (error) {
+                console.error(`Error testing ${linkText}:`, error);
+                testResults.push(`<div class="status error">❌ ${linkText} - خطای شبکه</div>`);
+            }
+            
+            // نمایش progress
+            results.innerHTML = `
+                <div class="alert alert-info">
+                    در حال تست... ${i + 1}/${links.length}
+                </div>
+                ${testResults.join('')}
+            `;
+            
+            // کمی صبر کنیم
+            await new Promise(resolve => setTimeout(resolve, 300));
+        }
+        
+        // نتیجه نهایی
+        results.innerHTML = `
+            <div class="alert alert-success">
+                <h5>✅ تست کامل شد!</h5>
+                ${testResults.join('')}
+            </div>
+        `;
+    }
+    
+    // Log کردن همه کلیک‌ها
+    document.addEventListener('click', function(e) {
+        if (e.target.tagName === 'A') {
+            console.log('🔗 Link clicked:', e.target.href);
+            console.log('📍 From page:', window.location.href);
+        }
+    });
+    
+    console.log('🧪 Navigation Test Page Loaded');
+    console.log('📍 Current URL:', window.location.href);
+    </script>
+</body>
+</html> 
