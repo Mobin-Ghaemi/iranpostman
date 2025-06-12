@@ -16,6 +16,7 @@ urlpatterns = [
     # Frontend Views
     path('', views.index, name='index'),
     path('collections/', views.collections, name='collections'),
+    path('collections/<int:collection_id>/', views.collection_detail, name='collection_detail'),
     path('history/', views.history, name='history'),
     path('environments/', views.environments, name='environments'),
     

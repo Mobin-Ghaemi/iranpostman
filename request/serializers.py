@@ -76,7 +76,7 @@ class APIRequestSerializer(serializers.ModelSerializer):
 
 class RequestHistorySerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
-    request_name = serializers.CharField(source='request.name', read_only=True)
+    request_name = serializers.SerializerMethodField()
     response_json = serializers.SerializerMethodField()
     is_success = serializers.BooleanField(source='is_success', read_only=True)
     
@@ -89,6 +89,9 @@ class RequestHistorySerializer(serializers.ModelSerializer):
             'is_success', 'executed_at'
         ]
         read_only_fields = ['user', 'executed_at']
+
+    def get_request_name(self, obj):
+        return obj.request.name if obj.request else 'درخواست سریع'
 
     def get_response_json(self, obj):
         return obj.get_response_json()

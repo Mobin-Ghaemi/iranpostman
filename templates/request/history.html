@@ -188,9 +188,17 @@ async function loadHistory(page = 1, filters = {}) {
                         <div class="col-md-2 text-center">
                             <small class="text-muted">${new Date(item.executed_at).toLocaleString('fa-IR')}</small>
                             <br>
-                            <button class="btn btn-outline-primary btn-sm mt-1 view-detail" data-id="${item.id}">
-                                <i class="bi bi-eye"></i> جزئیات
-                            </button>
+                            <div class="btn-group mt-1" role="group">
+                                <button class="btn btn-outline-primary btn-sm view-detail" data-id="${item.id}" title="جزئیات">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-success btn-sm re-execute" data-id="${item.id}" title="اجرای مجدد">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm delete-history" data-id="${item.id}" title="حذف">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -276,6 +284,42 @@ async function showHistoryDetail(historyId) {
     }
 }
 
+// اجرای مجدد درخواست
+async function reExecuteRequest(historyId) {
+    try {
+        const response = await axios.post(`/request/api/history/${historyId}/re_execute/`);
+        const result = response.data;
+        
+        showAlert('درخواست مجدداً اجرا شد!', 'success');
+        
+        // نمایش نتیجه در modal
+        showHistoryDetail(result.id);
+        
+        // بروزرسانی لیست
+        loadHistory(currentPage, getCurrentFilters());
+        
+    } catch (error) {
+        console.error('خطا در اجرای مجدد:', error);
+        showAlert('خطا در اجرای مجدد: ' + (error.response?.data?.error || error.message), 'danger');
+    }
+}
+
+// حذف تاریخچه منفرد
+async function deleteHistoryItem(historyId) {
+    if (!confirm('آیا مطمئن هستید که می‌خواهید این تاریخچه را حذف کنید؟')) {
+        return;
+    }
+    
+    try {
+        await axios.delete(`/request/api/history/${historyId}/`);
+        showAlert('تاریخچه با موفقیت حذف شد!', 'success');
+        loadHistory(currentPage, getCurrentFilters());
+    } catch (error) {
+        console.error('خطا در حذف تاریخچه:', error);
+        showAlert('خطا در حذف تاریخچه', 'danger');
+    }
+}
+
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
     loadHistory();
@@ -289,6 +333,16 @@ document.addEventListener('click', function(e) {
     if (e.target.closest('.view-detail')) {
         const historyId = e.target.closest('.view-detail').dataset.id;
         showHistoryDetail(historyId);
+    }
+    
+    if (e.target.closest('.re-execute')) {
+        const historyId = e.target.closest('.re-execute').dataset.id;
+        reExecuteRequest(historyId);
+    }
+    
+    if (e.target.closest('.delete-history')) {
+        const historyId = e.target.closest('.delete-history').dataset.id;
+        deleteHistoryItem(historyId);
     }
 });
 
@@ -320,8 +374,9 @@ document.getElementById('clear-history').addEventListener('click', async functio
     }
     
     try {
-        // این API باید در backend پیاده‌سازی شود
-        showAlert('این قابلیت در حال توسعه است', 'info');
+        const response = await axios.delete('/request/api/history/clear_all/');
+        showAlert(`${response.data.deleted_count} مورد از تاریخچه پاک شد.`, 'success');
+        loadHistory();
     } catch (error) {
         console.error('خطا در پاک کردن تاریخچه:', error);
         showAlert('خطا در پاک کردن تاریخچه', 'danger');

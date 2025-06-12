@@ -131,8 +131,8 @@ class RequestHistory(models.Model):
     ]
 
     # Request Info
-    request = models.ForeignKey(APIRequest, on_delete=models.CASCADE, verbose_name="درخواست")
-    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="کاربر")
+    request = models.ForeignKey(APIRequest, on_delete=models.CASCADE, null=True, blank=True, verbose_name="درخواست")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, verbose_name="کاربر")
     
     # Request snapshot (در زمان اجرا)
     method = models.CharField(max_length=10, verbose_name="متد")

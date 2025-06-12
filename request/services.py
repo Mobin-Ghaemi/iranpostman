@@ -64,7 +64,7 @@ class RequestExecutionService:
         """اجرای درخواست سریع بدون ذخیره در مدل APIRequest"""
         start_time = time.time()
         
-        # ایجاد تاریخچه
+        # ایجاد تاریخچه - اگر user None باشد، تاریخچه ذخیره نمی‌شود
         history = RequestHistory(
             user=user,
             method=request_data['method'],
@@ -103,8 +103,10 @@ class RequestExecutionService:
             history.status = 'error'
             history.error_message = f'خطای غیرمنتظره: {str(e)}'
         
-        # ذخیره تاریخچه
-        history.save()
+        # ذخیره تاریخچه فقط اگر user وجود داشت
+        if user:
+            history.save()
+        
         return history
     
     def _prepare_request_data(self, api_request: APIRequest):

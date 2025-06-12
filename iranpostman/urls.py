@@ -20,12 +20,11 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
 from django.shortcuts import redirect
+from request.views import signup, custom_login
 
 def home_redirect(request):
     """ریدایرکت به صفحه اصلی"""
-    if request.user.is_authenticated:
-        return redirect('request:index')
-    return redirect('admin:login')
+    return redirect('request:index')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -33,8 +32,9 @@ urlpatterns = [
     path('request/', include('request.urls')),
     
     # Authentication URLs
-    path('accounts/login/', auth_views.LoginView.as_view(template_name='admin/login.html'), name='login'),
-    path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('login/', custom_login, name='login'),
+    path('signup/', signup, name='signup'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='request:index'), name='logout'),
 ]
 
 # Static files در حالت دولوپمنت

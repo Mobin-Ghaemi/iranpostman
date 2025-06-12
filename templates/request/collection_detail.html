@@ -1,0 +1,369 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ collection.name }} - Iran Postman{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'request:collections' %}">کالکشن‌ها</a></li>
+                <li class="breadcrumb-item active">{{ collection.name }}</li>
+            </ol>
+        </nav>
+        <h2><i class="bi bi-folder-open text-info"></i> {{ collection.name }}</h2>
+        {% if collection.description %}
+            <p class="text-muted">{{ collection.description }}</p>
+        {% endif %}
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newRequestModal">
+        <i class="bi bi-plus"></i> درخواست جدید
+    </button>
+</div>
+
+<!-- درخواست‌های کالکشن -->
+<div class="card">
+    <div class="card-header">
+        <h5><i class="bi bi-list-ul"></i> درخواست‌های کالکشن</h5>
+    </div>
+    <div class="card-body">
+        <div id="requests-container">
+            <div class="text-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">در حال بارگذاری...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal برای درخواست جدید -->
+<div class="modal fade" id="newRequestModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">درخواست جدید</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="new-request-form">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">نام درخواست</label>
+                        <input type="text" class="form-control" id="request-name" required>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label">متد</label>
+                            <select class="form-select" id="request-method">
+                                <option value="GET">GET</option>
+                                <option value="POST">POST</option>
+                                <option value="PUT">PUT</option>
+                                <option value="PATCH">PATCH</option>
+                                <option value="DELETE">DELETE</option>
+                            </select>
+                        </div>
+                        <div class="col-md-9">
+                            <label class="form-label">URL</label>
+                            <input type="url" class="form-control" id="request-url" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">توضیحات</label>
+                        <textarea class="form-control" id="request-description" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">لغو</button>
+                <button type="button" class="btn btn-primary" id="save-request">ذخیره</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal برای اجرای درخواست -->
+<div class="modal fade" id="executeRequestModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="execute-modal-title">اجرای درخواست</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="execute-modal-body">
+                <!-- محتوا در JavaScript پر می‌شود -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="execute-request-btn">
+                    <i class="bi bi-send"></i> اجرا
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentCollectionId = {{ collection.id }};
+let currentRequestId = null;
+
+// بارگذاری درخواست‌های کالکشن
+async function loadCollectionRequests() {
+    try {
+        const response = await axios.get(`/request/api/collections/${currentCollectionId}/requests/`);
+        const requests = response.data;
+        
+        const container = document.getElementById('requests-container');
+        
+        if (requests.length === 0) {
+            container.innerHTML = `
+                <div class="text-center p-5">
+                    <i class="bi bi-inbox display-1 text-muted"></i>
+                    <h4 class="mt-3 text-muted">هیچ درخواستی در این کالکشن نیست</h4>
+                    <p class="text-muted">برای شروع یک درخواست جدید اضافه کنید</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let requestsHTML = '';
+        requests.forEach(request => {
+            requestsHTML += `
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-1">
+                                <span class="badge ${getMethodBadgeClass(request.method)}">${request.method}</span>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="mb-1">${request.name}</h6>
+                                <small class="text-muted">${request.url}</small>
+                                ${request.description ? `<br><small class="text-info">${request.description}</small>` : ''}
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <small class="text-muted">بروزرسانی: ${new Date(request.updated_at).toLocaleDateString('fa-IR')}</small>
+                            </div>
+                            <div class="col-md-2 text-end">
+                                <div class="btn-group">
+                                    <button class="btn btn-outline-success btn-sm execute-request" data-id="${request.id}" title="اجرا">
+                                        <i class="bi bi-play-circle"></i>
+                                    </button>
+                                    <button class="btn btn-outline-primary btn-sm edit-request" data-id="${request.id}" title="ویرایش">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm delete-request" data-id="${request.id}" title="حذف">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = requestsHTML;
+        
+    } catch (error) {
+        console.error('خطا در بارگذاری درخواست‌ها:', error);
+        showAlert('خطا در بارگذاری درخواست‌ها', 'danger');
+    }
+}
+
+// ذخیره درخواست جدید
+document.getElementById('save-request').addEventListener('click', async function() {
+    const name = document.getElementById('request-name').value.trim();
+    const method = document.getElementById('request-method').value;
+    const url = document.getElementById('request-url').value.trim();
+    const description = document.getElementById('request-description').value.trim();
+    
+    if (!name || !url) {
+        showAlert('نام و URL درخواست الزامی است', 'warning');
+        return;
+    }
+    
+    try {
+        await axios.post('/request/api/requests/', {
+            name: name,
+            method: method,
+            url: url,
+            description: description,
+            collection: currentCollectionId
+        });
+        
+        showAlert('درخواست با موفقیت ایجاد شد!', 'success');
+        
+        // پاک کردن فرم و بستن modal
+        document.getElementById('new-request-form').reset();
+        bootstrap.Modal.getInstance(document.getElementById('newRequestModal')).hide();
+        
+        // بروزرسانی لیست
+        loadCollectionRequests();
+        
+    } catch (error) {
+        console.error('خطا در ایجاد درخواست:', error);
+        showAlert('خطا در ایجاد درخواست', 'danger');
+    }
+});
+
+// اجرای درخواست
+async function executeRequest(requestId) {
+    try {
+        currentRequestId = requestId;
+        
+        // بارگذاری جزئیات درخواست
+        const requestResponse = await axios.get(`/request/api/requests/${requestId}/`);
+        const request = requestResponse.data;
+        
+        document.getElementById('execute-modal-title').textContent = `اجرای ${request.name}`;
+        
+        // نمایش جزئیات درخواست
+        document.getElementById('execute-modal-body').innerHTML = `
+            <div class="mb-3">
+                <h6><span class="badge ${getMethodBadgeClass(request.method)}">${request.method}</span> ${request.url}</h6>
+                ${request.description ? `<p class="text-muted">${request.description}</p>` : ''}
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>هدرها:</h6>
+                    <pre class="bg-light p-2 rounded">${JSON.stringify(request.headers || {}, null, 2)}</pre>
+                </div>
+                <div class="col-md-6">
+                    <h6>پارامترها:</h6>
+                    <pre class="bg-light p-2 rounded">${JSON.stringify(request.params || {}, null, 2)}</pre>
+                </div>
+            </div>
+            
+            ${request.body_raw ? `
+                <div class="mb-3">
+                    <h6>بدنه درخواست:</h6>
+                    <pre class="bg-light p-2 rounded">${request.body_raw}</pre>
+                </div>
+            ` : ''}
+            
+            <div id="execution-result" class="mt-4" style="display: none;">
+                <h6>نتیجه اجرا:</h6>
+                <div id="result-content"></div>
+            </div>
+        `;
+        
+        // نمایش modal
+        new bootstrap.Modal(document.getElementById('executeRequestModal')).show();
+        
+    } catch (error) {
+        console.error('خطا در بارگذاری درخواست:', error);
+        showAlert('خطا در بارگذاری درخواست', 'danger');
+    }
+}
+
+// اجرای درخواست
+document.getElementById('execute-request-btn').addEventListener('click', async function() {
+    if (!currentRequestId) return;
+    
+    const btn = this;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> در حال اجرا...';
+    btn.disabled = true;
+    
+    try {
+        const response = await axios.post(`/request/api/requests/${currentRequestId}/execute/`);
+        const result = response.data;
+        
+        // نمایش نتیجه
+        const resultContainer = document.getElementById('result-content');
+        resultContainer.innerHTML = `
+            <div class="card">
+                <div class="card-header">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>کد وضعیت:</strong> <span class="badge ${result.is_success ? 'bg-success' : 'bg-danger'}">${result.status_code || 'خطا'}</span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>زمان:</strong> ${formatResponseTime(result.response_time)}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>اندازه:</strong> ${result.response_size ? result.response_size + ' بایت' : '-'}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <ul class="nav nav-tabs mb-3">
+                        <li class="nav-item">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#result-body">بدنه پاسخ</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#result-headers">هدرها</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="result-body">
+                            <pre class="bg-light p-3 rounded" style="max-height: 300px; overflow-y: auto;">${formatJsonResponse(result.response_body)}</pre>
+                        </div>
+                        <div class="tab-pane fade" id="result-headers">
+                            <pre class="bg-light p-3 rounded">${JSON.stringify(result.response_headers, null, 2)}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('execution-result').style.display = 'block';
+        showAlert('درخواست با موفقیت اجرا شد!', 'success');
+        
+    } catch (error) {
+        console.error('خطا در اجرای درخواست:', error);
+        showAlert('خطا در اجرای درخواست: ' + (error.response?.data?.error || error.message), 'danger');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+});
+
+// حذف درخواست
+async function deleteRequest(requestId) {
+    if (!confirm('آیا مطمئن هستید که می‌خواهید این درخواست را حذف کنید؟')) {
+        return;
+    }
+    
+    try {
+        await axios.delete(`/request/api/requests/${requestId}/`);
+        showAlert('درخواست با موفقیت حذف شد!', 'success');
+        loadCollectionRequests();
+    } catch (error) {
+        console.error('خطا در حذف درخواست:', error);
+        showAlert('خطا در حذف درخواست', 'danger');
+    }
+}
+
+// Event listeners
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.execute-request')) {
+        const requestId = e.target.closest('.execute-request').dataset.id;
+        executeRequest(requestId);
+    }
+    
+    if (e.target.closest('.delete-request')) {
+        const requestId = e.target.closest('.delete-request').dataset.id;
+        deleteRequest(requestId);
+    }
+});
+
+// فرمت کردن پاسخ JSON
+function formatJsonResponse(responseBody) {
+    try {
+        const jsonData = JSON.parse(responseBody);
+        return JSON.stringify(jsonData, null, 2);
+    } catch (e) {
+        return responseBody;
+    }
+}
+
+// بارگذاری اولیه
+document.addEventListener('DOMContentLoaded', function() {
+    loadCollectionRequests();
+});
+</script>
+{% endblock %} 

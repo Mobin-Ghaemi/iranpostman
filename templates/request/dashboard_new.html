@@ -1,0 +1,570 @@
+{% extends 'base.html' %}
+
+{% block title %}داشبورد - Iran Postman{% endblock %}
+
+{% block extra_css %}
+<style>
+    .compact-layout {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .quick-request-section {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        padding: 20px;
+    }
+    
+    .response-section {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        padding: 20px;
+        border-right: 4px solid #28a745;
+    }
+    
+    .response-section.error {
+        border-right-color: #dc3545;
+    }
+    
+    .response-header {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .response-stats {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 15px;
+    }
+    
+    .response-stat {
+        text-align: center;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        flex: 1;
+    }
+    
+    .response-content {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        max-height: 300px;
+        overflow-y: auto;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        white-space: pre-wrap;
+    }
+    
+    .response-tabs {
+        margin-bottom: 15px;
+    }
+    
+    .response-tabs .nav-link {
+        border-radius: 8px;
+        margin-left: 5px;
+        padding: 8px 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="compact-layout">
+    <!-- سازنده درخواست سریع -->
+    <div class="quick-request-section">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold mb-0">
+                <i class="bi bi-play-circle text-primary"></i> درخواست سریع
+            </h4>
+            <span class="badge bg-primary">فوری</span>
+        </div>
+        
+        <form id="quick-request-form">
+            {% csrf_token %}
+            
+            <!-- URL و Method -->
+            <div class="row mb-3">
+                <div class="col-md-2">
+                    <select class="form-select" id="method" name="method">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="PATCH">PATCH</option>
+                        <option value="DELETE">DELETE</option>
+                    </select>
+                </div>
+                <div class="col-md-8">
+                    <input type="url" class="form-control" id="url" name="url" 
+                           placeholder="https://api.example.com/endpoint" required>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100" id="send-btn">
+                        <i class="bi bi-send"></i> ارسال
+                    </button>
+                </div>
+            </div>
+            
+            <!-- تب‌های فشرده -->
+            <ul class="nav nav-pills nav-fill mb-3" id="requestTabs">
+                <li class="nav-item">
+                    <button class="nav-link active" type="button" data-bs-toggle="tab" data-bs-target="#params-tab">پارامترها</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" type="button" data-bs-toggle="tab" data-bs-target="#headers-tab">هدرها</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" type="button" data-bs-toggle="tab" data-bs-target="#body-tab">بدنه</button>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                <!-- پارامترها -->
+                <div class="tab-pane fade show active" id="params-tab">
+                    <div id="params-container">
+                        <div class="row mb-2 param-row">
+                            <div class="col-md-5">
+                                <input type="text" class="form-control param-key" placeholder="کلید">
+                            </div>
+                            <div class="col-md-6">
+                                <input type="text" class="form-control param-value" placeholder="مقدار">
+                            </div>
+                            <div class="col-md-1">
+                                <input class="form-check-input param-enabled" type="checkbox" checked>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="add-param">
+                        <i class="bi bi-plus"></i> افزودن
+                    </button>
+                </div>
+
+                <!-- هدرها -->
+                <div class="tab-pane fade" id="headers-tab">
+                    <div id="headers-container">
+                        <div class="row mb-2 header-row">
+                            <div class="col-md-5">
+                                <input type="text" class="form-control header-key" placeholder="کلید هدر">
+                            </div>
+                            <div class="col-md-6">
+                                <input type="text" class="form-control header-value" placeholder="مقدار">
+                            </div>
+                            <div class="col-md-1">
+                                <input class="form-check-input header-enabled" type="checkbox" checked>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="add-header">
+                        <i class="bi bi-plus"></i> افزودن
+                    </button>
+                </div>
+
+                <!-- بدنه -->
+                <div class="tab-pane fade" id="body-tab">
+                    <select class="form-select mb-2" id="body-type">
+                        <option value="none">هیچ</option>
+                        <option value="raw">Raw</option>
+                        <option value="form-data">Form Data</option>
+                    </select>
+                    
+                    <div id="body-raw-section" style="display: none;">
+                        <textarea class="form-control font-monospace" id="body-raw" rows="4"></textarea>
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-outline-success btn-sm" id="fix-json">
+                                <i class="bi bi-tools"></i> تصحیح JSON
+                            </button>
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="create-json">
+                                <i class="bi bi-plus-circle"></i> ساخت JSON
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- نمایش پاسخ -->
+    <div id="response-section" class="response-section" style="display: none;">
+        <div class="response-header">
+            <h5 class="mb-0">
+                <i class="bi bi-arrow-down-circle text-success"></i> پاسخ API
+            </h5>
+            <button class="btn btn-outline-secondary btn-sm" id="clear-response">
+                <i class="bi bi-x"></i> پاک کردن
+            </button>
+        </div>
+        
+        <div class="response-stats">
+            <div class="response-stat">
+                <div class="fw-bold" id="response-status">-</div>
+                <small class="text-muted">کد وضعیت</small>
+            </div>
+            <div class="response-stat">
+                <div class="fw-bold" id="response-time">-</div>
+                <small class="text-muted">زمان پاسخ</small>
+            </div>
+            <div class="response-stat">
+                <div class="fw-bold" id="response-size">-</div>
+                <small class="text-muted">اندازه</small>
+            </div>
+        </div>
+        
+        <ul class="nav nav-tabs response-tabs">
+            <li class="nav-item">
+                <button class="nav-link active" type="button" data-bs-toggle="tab" data-bs-target="#response-body">
+                    <i class="bi bi-file-text"></i> بدنه پاسخ
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" type="button" data-bs-toggle="tab" data-bs-target="#response-headers">
+                    <i class="bi bi-tags"></i> هدرهای پاسخ
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="response-body">
+                <div class="response-content" id="response-body-content">
+                    <!-- محتوای پاسخ اینجا نمایش داده می‌شود -->
+                </div>
+            </div>
+            <div class="tab-pane fade" id="response-headers">
+                <div class="response-content" id="response-headers-content">
+                    <!-- هدرهای پاسخ اینجا نمایش داده می‌شود -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- آمار و تاریخچه -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-bar-chart"></i> آمار</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h4 class="text-primary" id="total-collections">-</h4>
+                            <small>کالکشن‌ها</small>
+                            {% if not user.is_authenticated %}
+                                <br><small class="text-muted">نیاز به ورود</small>
+                            {% endif %}
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-success" id="total-environments">-</h4>
+                            <small>محیط‌ها</small>
+                            {% if not user.is_authenticated %}
+                                <br><small class="text-muted">نیاز به ورود</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if not user.is_authenticated %}
+                        <div class="mt-3 text-center">
+                            <hr>
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle"></i>
+                                برای ذخیره آمار و داده‌ها وارد شوید
+                            </small>
+                            <br>
+                            <a href="{% url 'login' %}" class="btn btn-outline-primary btn-sm mt-2">
+                                <i class="bi bi-box-arrow-in-right"></i> ورود
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between">
+                    <h6 class="mb-0"><i class="bi bi-clock-history"></i> تاریخچه اخیر</h6>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'request:history' %}" class="btn btn-outline-primary btn-sm">همه</a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div id="recent-history" style="max-height: 200px; overflow-y: auto;">
+                        <div class="text-center p-3">
+                            <div class="spinner-border spinner-border-sm"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// متغیرهای گلوبال
+let currentHistoryId = null;
+let isRequestInProgress = false;
+
+// بارگذاری آمار
+async function loadDashboardStats() {
+    try {
+        const response = await axios.get('/request/api/dashboard-stats/');
+        const stats = response.data;
+        
+        document.getElementById('total-collections').textContent = stats.total_collections;
+        document.getElementById('total-environments').textContent = stats.total_environments;
+        
+        // تاریخچه
+        const recentHistory = document.getElementById('recent-history');
+        if (stats.recent_requests.length === 0) {
+            if (stats.message) {
+                // کاربر لاگین نباشد
+                recentHistory.innerHTML = `
+                    <div class="text-center p-3 text-muted">
+                        <i class="bi bi-lock h4 mb-2"></i>
+                        <p>${stats.message}</p>
+                        <a href="/login/" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-box-arrow-in-right"></i> ورود
+                        </a>
+                    </div>
+                `;
+            } else {
+                recentHistory.innerHTML = '<p class="text-muted text-center">تاریخچه‌ای وجود ندارد</p>';
+            }
+        } else {
+            recentHistory.innerHTML = stats.recent_requests.map(item => `
+                <div class="d-flex justify-content-between border-bottom py-2">
+                    <div>
+                        <span class="badge ${getMethodBadgeClass(item.method)} me-1">${item.method}</span>
+                        <small>${item.request_name || 'سریع'}</small>
+                    </div>
+                    <small class="text-muted">${item.status_code || 'خطا'}</small>
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        console.error('خطا:', error);
+        // در صورت عدم دسترسی، نمایش پیام مناسب
+        document.getElementById('recent-history').innerHTML = `
+            <div class="text-center p-3 text-warning">
+                <i class="bi bi-exclamation-triangle h4 mb-2"></i>
+                <p>عدم دسترسی به آمار</p>
+                <small>ممکن است نیاز به ورود داشته باشید</small>
+            </div>
+        `;
+    }
+}
+
+// مدیریت تب‌ها (بدون ارسال خودکار)
+document.getElementById('body-type').addEventListener('change', function() {
+    const section = document.getElementById('body-raw-section');
+    section.style.display = this.value === 'raw' ? 'block' : 'none';
+});
+
+// JSON Tools
+document.addEventListener('click', function(e) {
+    e.preventDefault(); // جلوگیری از ارسال فرم
+    
+    if (e.target.closest('#fix-json')) {
+        const textarea = document.getElementById('body-raw');
+        let content = textarea.value.trim();
+        
+        if (!content) {
+            showAlert('محتوا خالی است!', 'warning');
+            return;
+        }
+        
+        try {
+            // سعی کن JSON پارس کنی
+            const parsed = JSON.parse(content);
+            textarea.value = JSON.stringify(parsed, null, 2);
+            showAlert('JSON تصحیح شد!', 'success');
+        } catch (e) {
+            // اگر نشد، متن ساده رو تبدیل کن
+            const key = prompt('نام کلید:', 'data') || 'data';
+            const result = {};
+            result[key] = content;
+            textarea.value = JSON.stringify(result, null, 2);
+            showAlert('متن به JSON تبدیل شد!', 'success');
+        }
+    }
+    
+    if (e.target.closest('#create-json')) {
+        createSimpleJsonBuilder();
+    }
+});
+
+// سازنده JSON ساده
+function createSimpleJsonBuilder() {
+    const key = prompt('نام کلید را وارد کنید:', 'name');
+    const value = prompt('مقدار را وارد کنید:', 'value');
+    
+    if (key && value) {
+        const result = {};
+        result[key] = value;
+        document.getElementById('body-raw').value = JSON.stringify(result, null, 2);
+        showAlert('JSON ایجاد شد!', 'success');
+    }
+}
+
+// افزودن پارامتر/هدر
+document.getElementById('add-param').addEventListener('click', function(e) {
+    e.preventDefault();
+    const container = document.getElementById('params-container');
+    const newRow = container.querySelector('.param-row').cloneNode(true);
+    newRow.querySelectorAll('input[type="text"]').forEach(input => input.value = '');
+    container.appendChild(newRow);
+});
+
+document.getElementById('add-header').addEventListener('click', function(e) {
+    e.preventDefault();
+    const container = document.getElementById('headers-container');
+    const newRow = container.querySelector('.header-row').cloneNode(true);
+    newRow.querySelectorAll('input[type="text"]').forEach(input => input.value = '');
+    container.appendChild(newRow);
+});
+
+// پاک کردن پاسخ
+document.addEventListener('click', function(e) {
+    if (e.target.closest('#clear-response')) {
+        document.getElementById('response-section').style.display = 'none';
+    }
+});
+
+// نمایش پاسخ
+function displayResponse(result) {
+    const responseSection = document.getElementById('response-section');
+    const statusElement = document.getElementById('response-status');
+    const timeElement = document.getElementById('response-time');
+    const sizeElement = document.getElementById('response-size');
+    const bodyElement = document.getElementById('response-body-content');
+    const headersElement = document.getElementById('response-headers-content');
+    
+    // نمایش section
+    responseSection.style.display = 'block';
+    
+    // تنظیم کلاس بر اساس موفقیت یا خطا
+    if (result.is_success) {
+        responseSection.className = 'response-section';
+        responseSection.querySelector('i').className = 'bi bi-arrow-down-circle text-success';
+    } else {
+        responseSection.className = 'response-section error';
+        responseSection.querySelector('i').className = 'bi bi-arrow-down-circle text-danger';
+    }
+    
+    // نمایش آمار
+    statusElement.textContent = result.status_code || 'خطا';
+    statusElement.className = `fw-bold ${result.is_success ? 'text-success' : 'text-danger'}`;
+    
+    timeElement.textContent = formatResponseTime(result.response_time);
+    sizeElement.textContent = result.response_size ? (result.response_size + ' بایت') : '-';
+    
+    // نمایش بدنه پاسخ
+    try {
+        const jsonData = JSON.parse(result.response_body);
+        bodyElement.textContent = JSON.stringify(jsonData, null, 2);
+    } catch (e) {
+        bodyElement.textContent = result.response_body || 'پاسخی دریافت نشد';
+    }
+    
+    // نمایش هدرهای پاسخ
+    if (result.response_headers && typeof result.response_headers === 'object') {
+        headersElement.textContent = JSON.stringify(result.response_headers, null, 2);
+    } else {
+        headersElement.textContent = 'هدری دریافت نشد';
+    }
+    
+    // اسکرول به پاسخ
+    responseSection.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ارسال درخواست - فقط با کلیک روی دکمه ارسال
+document.getElementById('quick-request-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    if (isRequestInProgress) {
+        showAlert('درخواست قبلی در حال پردازش است', 'warning');
+        return;
+    }
+    
+    const sendBtn = document.getElementById('send-btn');
+    const originalText = sendBtn.innerHTML;
+    
+    isRequestInProgress = true;
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> در حال ارسال...';
+    
+    try {
+        // جمع‌آوری داده‌ها
+        const params = {};
+        document.querySelectorAll('.param-row').forEach(row => {
+            const key = row.querySelector('.param-key').value.trim();
+            const value = row.querySelector('.param-value').value.trim();
+            const enabled = row.querySelector('.param-enabled').checked;
+            if (key && value && enabled) params[key] = value;
+        });
+        
+        const headers = {};
+        document.querySelectorAll('.header-row').forEach(row => {
+            const key = row.querySelector('.header-key').value.trim();
+            const value = row.querySelector('.header-value').value.trim();
+            const enabled = row.querySelector('.header-enabled').checked;
+            if (key && value && enabled) headers[key] = value;
+        });
+        
+        const requestData = {
+            method: document.getElementById('method').value,
+            url: document.getElementById('url').value,
+            params: params,
+            headers: headers,
+            body_type: document.getElementById('body-type').value,
+            body_raw: document.getElementById('body-raw').value || ''
+        };
+        
+        const response = await axios.post('/request/api/quick-request/', requestData);
+        const result = response.data;
+        
+        // نمایش پاسخ در section جدید
+        displayResponse(result);
+        
+        // نمایش پیام موفقیت کوتاه
+        showAlert('درخواست ارسال شد', 'success', 2000);
+        
+        // بروزرسانی آمار
+        loadDashboardStats();
+        
+    } catch (error) {
+        const errorMsg = error.response?.data?.error || error.message || 'خطای نامشخص';
+        
+        // نمایش خطا در section پاسخ
+        displayResponse({
+            is_success: false,
+            status_code: error.response?.status || 'خطا',
+            response_time: null,
+            response_size: null,
+            response_body: errorMsg,
+            response_headers: {}
+        });
+        
+        showAlert('خطا در ارسال درخواست', 'error', 3000);
+    } finally {
+        isRequestInProgress = false;
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = originalText;
+    }
+});
+
+// بارگذاری اولیه
+document.addEventListener('DOMContentLoaded', loadDashboardStats);
+</script>
+{% endblock %} 
