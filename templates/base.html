@@ -14,22 +14,856 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <!-- Custom CSS -->
     <style>
-        /* استایل‌های عمومی */
+        /* CSS Variables for Theme */
+        :root {
+            /* Light Theme */
+            --bg-primary: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --bg-secondary: white;
+            --bg-tertiary: #f8f9fa;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --text-inverse: white;
+            --border-color: #dee2e6;
+            --navbar-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --sidebar-bg: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            --card-bg: white;
+            --card-shadow: 0 0 20px rgba(0,0,0,0.1);
+            --toast-success: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            --toast-danger: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%);
+            --toast-warning: linear-gradient(135deg, #ffc107 0%, #ffab00 100%);
+            --toast-info: linear-gradient(135deg, #17a2b8 0%, #0dcaf0 100%);
+            --response-bg: #f8f9fa;
+            --input-bg: white;
+            --input-border: #ced4da;
+            --button-primary: #667eea;
+            --button-secondary: #6c757d;
+            --button-success: #28a745;
+            --button-danger: #dc3545;
+            --button-warning: #ffc107;
+            --button-info: #17a2b8;
+        }
+        
+        /* Dark Theme - مشکی بنفش زیبا */
+        [data-theme="dark"] {
+            --bg-primary: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+            --bg-secondary: #16213e;
+            --bg-tertiary: #1e2a4a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-inverse: #0f0f23;
+            --border-color: #334155;
+            --navbar-bg: linear-gradient(135deg, #1e1e3f 0%, #2d1b69 100%);
+            --sidebar-bg: linear-gradient(180deg, #1e1e3f 0%, #2d1b69 100%);
+            --card-bg: #1e2a4a;
+            --card-shadow: 0 0 30px rgba(0,0,0,0.5);
+            --toast-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --toast-danger: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            --toast-warning: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            --toast-info: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            --response-bg: #1e2a4a;
+            --input-bg: #1e2a4a;
+            --input-border: #475569;
+            --button-primary: #6366f1;
+            --button-secondary: #64748b;
+            --button-success: #10b981;
+            --button-danger: #ef4444;
+            --button-warning: #f59e0b;
+            --button-info: #3b82f6;
+        }
+        
+        /* Apply Theme Variables */
         body {
             font-family: 'Vazir', sans-serif;
             direction: rtl;
             text-align: right;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: var(--bg-primary);
+            color: var(--text-primary);
             min-height: 100vh;
+            transition: all 0.3s ease;
         }
         
         .main-content {
-            background: white;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
             min-height: 100vh;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
         }
         
-        /* استایل‌های Toast Notifications */
+        /* Dark mode toggle button - بهبود شده */
+        .theme-toggle {
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 50px;
+            padding: 10px 15px;
+            margin-left: 15px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-size: 1.1rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .theme-toggle i {
+            font-size: 1.3rem;
+            transition: all 0.4s ease;
+        }
+        
+        .theme-toggle:hover i {
+            transform: rotate(180deg);
+            color: #fbbf24;
+        }
+        
+        /* Cards and containers - بهبود شده */
+        .card, .request-builder {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover, .request-builder:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        
+        [data-theme="dark"] .card:hover,
+        [data-theme="dark"] .request-builder:hover {
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        }
+        
+        /* Form controls - بهبود شده */
+        .form-control, .form-select, .form-control:disabled, .form-select:disabled {
+            background: var(--input-bg) !important;
+            color: var(--text-primary) !important;
+            border: 2px solid var(--input-border) !important;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            background: var(--input-bg) !important;
+            color: var(--text-primary) !important;
+            border-color: var(--button-primary) !important;
+            box-shadow: 0 0 0 0.25rem rgba(102, 102, 241, 0.25) !important;
+        }
+        
+        .form-control::placeholder {
+            color: var(--text-secondary) !important;
+            opacity: 0.7;
+        }
+        
+        /* Tables - بهبود شده */
+        .table {
+            color: var(--text-primary);
+            --bs-table-bg: var(--bg-secondary);
+            --bs-table-border-color: var(--border-color);
+            --bs-table-hover-bg: var(--bg-tertiary);
+        }
+        
+        .table-striped > tbody > tr:nth-of-type(odd) > td,
+        .table-striped > tbody > tr:nth-of-type(odd) > th {
+            background-color: var(--bg-tertiary);
+        }
+        
+        .table th {
+            color: var(--text-primary);
+            font-weight: 600;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        /* Response viewer - بهبود شده */
+        .response-viewer {
+            background: var(--response-bg);
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        /* Response viewer content - متن‌های داخل response با قدرت بیشتر */
+        .response-viewer *,
+        .response-viewer *:before,
+        .response-viewer *:after {
+            color: var(--text-primary) !important;
+        }
+        
+        /* Override Bootstrap و سایر کتابخانه‌ها */
+        .response-viewer .text-dark,
+        .response-viewer .text-black,
+        .response-viewer .text-muted,
+        .response-viewer .text-white {
+            color: var(--text-primary) !important;
+        }
+        
+        /* Background overrides */
+        .response-viewer .bg-white,
+        .response-viewer .bg-light {
+            background: var(--response-bg) !important;
+            color: var(--text-primary) !important;
+        }
+        
+        .response-viewer h1, .response-viewer h2, .response-viewer h3, 
+        .response-viewer h4, .response-viewer h5, .response-viewer h6 {
+            color: var(--text-primary) !important;
+            font-weight: 600;
+        }
+        
+        .response-viewer p, .response-viewer div, .response-viewer span,
+        .response-viewer strong, .response-viewer em, .response-viewer b, .response-viewer i,
+        .response-viewer a, .response-viewer li, .response-viewer td, .response-viewer th,
+        .response-viewer label, .response-viewer small, .response-viewer text {
+            color: var(--text-primary) !important;
+        }
+        
+        .response-viewer .badge {
+            color: white !important;
+        }
+        
+        /* JSON و Code highlighting در response viewer */
+        .response-viewer pre, .response-viewer code {
+            background: var(--bg-tertiary) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-color) !important;
+            padding: 10px !important;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
+        }
+        
+        /* قوی‌ترین CSS برای اطمینان از رنگ متن */
+        [data-theme="dark"] .response-viewer,
+        [data-theme="dark"] .response-viewer *,
+        [data-theme="dark"] .response-viewer *:before,
+        [data-theme="dark"] .response-viewer *:after {
+            color: #f1f5f9 !important;
+        }
+        
+        [data-theme="dark"] .response-viewer {
+            background: #1e2a4a !important;
+            border: 2px solid #334155 !important;
+        }
+        
+        [data-theme="dark"] .response-viewer pre,
+        [data-theme="dark"] .response-viewer code {
+            background: #1e2a4a !important;
+            color: #f1f5f9 !important;
+            border: 1px solid #334155 !important;
+        }
+        
+        /* Override هر background سفیدی در دارک مود */
+        [data-theme="dark"] .response-viewer .bg-white,
+        [data-theme="dark"] .response-viewer .bg-light,
+        [data-theme="dark"] .response-viewer .card,
+        [data-theme="dark"] .response-viewer .card-body {
+            background: #1e2a4a !important;
+            color: #f1f5f9 !important;
+        }
+        
+        /* برای متن‌های که ممکنه inline style داشته باشن */
+        [data-theme="dark"] .response-viewer [style*="color"],
+        [data-theme="dark"] .response-viewer [style*="background"] {
+            color: #f1f5f9 !important;
+            background: transparent !important;
+        }
+        
+        .response-viewer .json-key {
+            color: #3b82f6 !important; /* آبی برای key ها */
+        }
+        
+        .response-viewer .json-string {
+            color: #10b981 !important; /* سبز برای string ها */
+        }
+        
+        .response-viewer .json-number {
+            color: #f59e0b !important; /* نارنجی برای number ها */
+        }
+        
+        .response-viewer .json-boolean {
+            color: #ef4444 !important; /* قرمز برای boolean ها */
+        }
+        
+        .response-viewer .json-null {
+            color: #6b7280 !important; /* خاکستری برای null */
+        }
+        
+        /* Response headers */
+        .response-viewer .response-headers {
+            background: var(--bg-tertiary);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .response-viewer .response-headers h5,
+        .response-viewer .response-headers h6 {
+            color: var(--text-primary) !important;
+            margin-bottom: 10px;
+        }
+        
+        .response-viewer .response-headers .header-item {
+            color: var(--text-primary) !important;
+            margin: 5px 0;
+        }
+        
+        .response-viewer .response-headers .header-name {
+            color: var(--button-info) !important;
+            font-weight: 600;
+        }
+        
+        .response-viewer .response-headers .header-value {
+            color: var(--text-primary) !important;
+        }
+        
+        /* Response status */
+        .response-viewer .response-status {
+            color: var(--text-primary) !important;
+            font-weight: 600;
+        }
+        
+        .response-viewer .status-200 { color: var(--button-success) !important; }
+        .response-viewer .status-201 { color: var(--button-success) !important; }
+        .response-viewer .status-400 { color: var(--button-warning) !important; }
+        .response-viewer .status-401 { color: var(--button-danger) !important; }
+        .response-viewer .status-403 { color: var(--button-danger) !important; }
+        .response-viewer .status-404 { color: var(--button-warning) !important; }
+        .response-viewer .status-500 { color: var(--button-danger) !important; }
+        
+        /* Response time و size */
+        .response-viewer .response-meta {
+            color: var(--text-secondary) !important;
+            font-size: 14px;
+        }
+        
+        /* Response body tabs */
+        .response-viewer .nav-tabs {
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .response-viewer .nav-tabs .nav-link {
+            color: var(--text-secondary) !important;
+            border: none !important;
+            background: transparent !important;
+        }
+        
+        .response-viewer .nav-tabs .nav-link.active {
+            color: var(--button-primary) !important;
+            border-bottom: 2px solid var(--button-primary) !important;
+            background: transparent !important;
+        }
+        
+        .response-viewer .nav-tabs .nav-link:hover {
+            color: var(--text-primary) !important;
+            background: var(--bg-tertiary) !important;
+        }
+        
+        /* Response body content */
+        .response-viewer .tab-content {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        
+        .response-viewer .tab-pane {
+            color: var(--text-primary) !important;
+        }
+        
+        /* Pretty JSON formatting */
+        .response-viewer .json-formatter {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .response-viewer .json-formatter .json-markup {
+            color: var(--text-secondary) !important; /* براکت ها و کاما ها */
+        }
+        
+        /* Response error messages */
+        .response-viewer .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--button-danger) !important;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        /* Response loading state */
+        .response-viewer .loading {
+            color: var(--text-secondary) !important;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        /* Raw response text */
+        .response-viewer .raw-response {
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            background: var(--bg-tertiary);
+            padding: 15px;
+            border-radius: 8px;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-color);
+        }
+        
+        /* Response buttons */
+        .response-viewer .btn {
+            margin: 5px;
+        }
+        
+        /* Copy button در response */
+        .response-viewer .copy-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: var(--button-secondary);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .response-viewer .copy-btn:hover {
+            background: var(--button-primary);
+        }
+        
+        /* اضافه کردن override برای تمام المان‌های محتمل */
+        .response-viewer textarea,
+        .response-viewer input[type="text"],
+        .response-viewer .form-control {
+            background: var(--bg-tertiary) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-color) !important;
+        }
+        
+        /* برای احتمال استفاده از کلاس‌های مختلف در JS */
+        #response-container,
+        #response-body,
+        #response-headers,
+        .api-response,
+        .response-content,
+        .response-data {
+            background: var(--response-bg) !important;
+            color: var(--text-primary) !important;
+        }
+        
+        [data-theme="dark"] #response-container,
+        [data-theme="dark"] #response-body,
+        [data-theme="dark"] #response-headers,
+        [data-theme="dark"] .api-response,
+        [data-theme="dark"] .response-content,
+        [data-theme="dark"] .response-data {
+            background: #1e2a4a !important;
+            color: #f1f5f9 !important;
+        }
+        
+        [data-theme="dark"] #response-container *,
+        [data-theme="dark"] #response-body *,
+        [data-theme="dark"] #response-headers *,
+        [data-theme="dark"] .api-response *,
+        [data-theme="dark"] .response-content *,
+        [data-theme="dark"] .response-data * {
+            color: #f1f5f9 !important;
+        }
+        
+        /* استایل‌های navbar - بهبود شده */
+        .navbar {
+            background: var(--navbar-bg) !important;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            backdrop-filter: blur(10px);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.6rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .navbar-text {
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-weight: 500;
+        }
+        
+        .navbar .nav-link {
+            color: rgba(255, 255, 255, 0.8) !important;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin: 0 5px;
+            padding: 8px 15px !important;
+            border-radius: 20px;
+        }
+        
+        .navbar .nav-link:hover {
+            color: white !important;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        /* استایل‌های متد HTTP - بهبود شده */
+        .method-get { 
+            background: var(--button-success); 
+            color: white;
+            font-weight: 600;
+        }
+        .method-post { 
+            background: var(--button-info); 
+            color: white;
+            font-weight: 600;
+        }
+        .method-put { 
+            background: var(--button-warning); 
+            color: white;
+            font-weight: 600;
+        }
+        .method-delete { 
+            background: var(--button-danger); 
+            color: white;
+            font-weight: 600;
+        }
+        .method-patch { 
+            background: var(--button-info); 
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Sidebar - کاملاً بازطراحی شده */
+        .sidebar {
+            min-height: 100vh;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+            background: var(--sidebar-bg);
+            padding: 0;
+            backdrop-filter: blur(10px);
+        }
+        
+        .main-content {
+            padding: 25px;
+        }
+        
+        .badge {
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-weight: 500;
+        }
+        
+        .status-success { 
+            color: var(--button-success);
+            font-weight: 600;
+        }
+        .status-error { 
+            color: var(--button-danger);
+            font-weight: 600;
+        }
+        
+        .request-builder {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 25px;
+            border: 2px solid var(--border-color);
+        }
+        
+        .url-input-group {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .response-viewer {
+            background: var(--response-bg);
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 25px;
+        }
+        
+        /* Sidebar navigation - کاملاً بهبود شده */
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.85) !important;
+            padding: 15px 20px;
+            margin: 8px 15px;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            border: 2px solid transparent;
+            text-decoration: none !important;
+            cursor: pointer !important;
+            pointer-events: auto !important;
+            display: block;
+            backdrop-filter: blur(5px);
+        }
+        
+        .sidebar .nav-link:hover {
+            background: rgba(255, 255, 255, 0.2) !important;
+            color: white !important;
+            transform: translateX(-8px);
+            border-color: rgba(255, 255, 255, 0.4);
+            text-decoration: none !important;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .sidebar .nav-link.active {
+            background: rgba(255, 255, 255, 0.3) !important;
+            color: white !important;
+            border-color: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            font-weight: 600;
+        }
+        
+        .sidebar .nav-link i {
+            margin-left: 12px;
+            font-size: 1.2rem;
+            width: 24px;
+        }
+        
+        .sidebar-header {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 25px;
+            text-align: center;
+            color: white;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .sidebar-header h5 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.4rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .sidebar-header small {
+            opacity: 0.9;
+            font-weight: 500;
+        }
+        
+        .user-info {
+            background: rgba(255, 255, 255, 0.15);
+            margin: 20px 15px;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .guest-info {
+            background: rgba(251, 191, 36, 0.2);
+            border: 2px solid rgba(251, 191, 36, 0.4);
+        }
+        
+        .auth-buttons {
+            margin-top: 15px;
+        }
+        
+        .auth-buttons .btn {
+            margin: 3px;
+            padding: 8px 15px;
+            font-size: 13px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        
+        /* استایل‌های اضافی برای دکمه‌های navigation */
+        .sidebar button.nav-link {
+            background: none !important;
+            border: 2px solid transparent !important;
+            display: block;
+            width: 100%;
+            text-align: right;
+            font-family: inherit;
+            color: inherit;
+        }
+        
+        .sidebar button.nav-link:focus {
+            outline: 3px solid rgba(255, 255, 255, 0.4);
+            outline-offset: 2px;
+        }
+        
+        .sidebar button.nav-link:hover:not(.disabled) {
+            background: rgba(255, 255, 255, 0.2) !important;
+            color: white;
+            transform: translateX(-8px);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+        
+        /* اطمینان از کار کردن onclick */
+        .sidebar .nav-link[onclick] {
+            cursor: pointer !important;
+            pointer-events: auto !important;
+        }
+        
+        /* بهبود scrollbar در دارک مود */
+        [data-theme="dark"] ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        [data-theme="dark"] ::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+        
+        [data-theme="dark"] ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+        
+        [data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+        
+        /* Code blocks - بهبود شده */
+        pre, code {
+            background: var(--bg-tertiary) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        /* Modals - بهبود شده */
+        .modal-content {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+            box-shadow: var(--card-shadow);
+        }
+        
+        .modal-header {
+            border-bottom: 2px solid var(--border-color);
+            background: var(--bg-tertiary);
+        }
+        
+        .modal-footer {
+            border-top: 2px solid var(--border-color);
+            background: var(--bg-tertiary);
+        }
+        
+        /* Buttons - کاملاً بازطراحی شده */
+        .btn {
+            transition: all 0.3s ease;
+            font-weight: 500;
+            border-radius: 8px;
+            border-width: 2px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn-primary {
+            background: var(--button-primary);
+            border-color: var(--button-primary);
+            color: white;
+        }
+        
+        .btn-primary:hover, .btn-primary:focus {
+            background: var(--button-primary);
+            border-color: var(--button-primary);
+            filter: brightness(1.1);
+        }
+        
+        .btn-secondary {
+            background: var(--button-secondary);
+            border-color: var(--button-secondary);
+            color: white;
+        }
+        
+        .btn-secondary:hover, .btn-secondary:focus {
+            background: var(--button-secondary);
+            border-color: var(--button-secondary);
+            filter: brightness(1.1);
+        }
+        
+        .btn-success {
+            background: var(--button-success);
+            border-color: var(--button-success);
+        }
+        
+        .btn-success:hover, .btn-success:focus {
+            background: var(--button-success);
+            border-color: var(--button-success);
+            filter: brightness(1.1);
+        }
+        
+        .btn-danger {
+            background: var(--button-danger);
+            border-color: var(--button-danger);
+        }
+        
+        .btn-danger:hover, .btn-danger:focus {
+            background: var(--button-danger);
+            border-color: var(--button-danger);
+            filter: brightness(1.1);
+        }
+        
+        .btn-warning {
+            background: var(--button-warning);
+            border-color: var(--button-warning);
+            color: white;
+        }
+        
+        .btn-warning:hover, .btn-warning:focus {
+            background: var(--button-warning);
+            border-color: var(--button-warning);
+            color: white;
+            filter: brightness(1.1);
+        }
+        
+        .btn-info {
+            background: var(--button-info);
+            border-color: var(--button-info);
+        }
+        
+        .btn-info:hover, .btn-info:focus {
+            background: var(--button-info);
+            border-color: var(--button-info);
+            filter: brightness(1.1);
+        }
+        
+        /* Outline buttons */
+        .btn-outline-primary {
+            color: var(--button-primary);
+            border-color: var(--button-primary);
+            background: transparent;
+        }
+        
+        .btn-outline-primary:hover, .btn-outline-primary:focus {
+            background: var(--button-primary);
+            border-color: var(--button-primary);
+            color: white;
+        }
+        
+        .btn-outline-secondary {
+            color: var(--text-primary);
+            border-color: var(--border-color);
+            background: transparent;
+        }
+        
+        .btn-outline-secondary:hover, .btn-outline-secondary:focus {
+            background: var(--button-secondary);
+            border-color: var(--button-secondary);
+            color: white;
+        }
+        
+        /* Badges - بهبود شده */
+        .badge {
+            transition: all 0.3s ease;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+        
+        /* Toast Notifications - بهبود شده */
         .toast-container {
             z-index: 9999 !important;
             position: fixed;
@@ -42,16 +876,16 @@
             .toast-container {
                 right: 20px;
                 left: auto;
-                max-width: 350px;
+                max-width: 400px;
             }
         }
         
         .toast {
-            backdrop-filter: blur(15px);
+            backdrop-filter: blur(20px);
             border-radius: 15px !important;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
             margin-bottom: 15px;
-            min-width: 300px;
+            min-width: 320px;
             border: none;
             overflow: hidden;
             animation: slideInRight 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -84,8 +918,8 @@
         }
         
         .toast-body {
-            padding: 20px;
-            font-size: 15px;
+            padding: 20px 25px;
+            font-size: 16px;
             font-weight: 500;
         }
         
@@ -97,7 +931,7 @@
         
         .toast-title {
             font-weight: 700;
-            font-size: 16px;
+            font-size: 17px;
         }
         
         .toast-message {
@@ -107,43 +941,43 @@
         }
         
         .toast.bg-success {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
-            border-right: 4px solid #198754;
+            background: var(--toast-success) !important;
+            border-right: 4px solid #059669;
         }
         
         .toast.bg-danger {
-            background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%) !important;
-            border-right: 4px solid #b02a37;
+            background: var(--toast-danger) !important;
+            border-right: 4px solid #dc2626;
         }
         
         .toast.bg-warning {
-            background: linear-gradient(135deg, #ffc107 0%, #ffab00 100%) !important;
-            color: #212529 !important;
-            border-right: 4px solid #d39e00;
+            background: var(--toast-warning) !important;
+            color: white !important;
+            border-right: 4px solid #d97706;
         }
         
         .toast.bg-info {
-            background: linear-gradient(135deg, #17a2b8 0%, #0dcaf0 100%) !important;
-            border-right: 4px solid #0f5132;
+            background: var(--toast-info) !important;
+            border-right: 4px solid #2563eb;
         }
         
         .toast .btn-close {
             background: rgba(255, 255, 255, 0.3);
             border-radius: 50%;
-            padding: 8px;
+            padding: 10px;
             margin: 0;
             opacity: 0.8;
             transition: all 0.3s ease;
         }
         
         .toast .btn-close:hover {
-            background: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.6);
             opacity: 1;
-            transform: scale(1.1);
+            transform: scale(1.2);
         }
         
         .toast-icon {
-            font-size: 24px;
+            font-size: 26px;
             margin-left: 15px;
             animation: bounce 0.6s ease-in-out;
         }
@@ -159,167 +993,155 @@
                 transform: translateY(-5px);
             }
         }
-        
-        /* استایل‌های navbar */
-        .navbar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        
-        .navbar-brand {
-            font-weight: 700;
-            font-size: 1.5rem;
-        }
-        
-        /* استایل‌های متد HTTP */
-        .method-get { background: #28a745; }
-        .method-post { background: #007bff; }
-        .method-put { background: #ffc107; color: #212529; }
-        .method-delete { background: #dc3545; }
-        .method-patch { background: #17a2b8; }
-        
-        .navbar-brand {
-            font-weight: bold;
-        }
-        .sidebar {
-            min-height: 100vh;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-            padding: 0;
-        }
-        .main-content {
-            padding: 20px;
-        }
-        .badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-        }
-        .status-success { color: #28a745; }
-        .status-error { color: #dc3545; }
-        
-        .request-builder {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 20px;
-        }
-        .url-input-group {
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        .response-viewer {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-        
-        .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.8) !important;
-            padding: 15px 20px;
-            margin: 5px 15px;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            border: 2px solid transparent;
-            text-decoration: none !important;
-            cursor: pointer !important;
-            pointer-events: auto !important;
-            display: block;
-        }
-        
-        .sidebar .nav-link:hover {
-            background: rgba(255, 255, 255, 0.15) !important;
-            color: white !important;
-            transform: translateX(-5px);
-            border-color: rgba(255, 255, 255, 0.3);
-            text-decoration: none !important;
-        }
-        
-        .sidebar .nav-link.active {
-            background: rgba(255, 255, 255, 0.25) !important;
-            color: white !important;
-            border-color: rgba(255, 255, 255, 0.5);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-        
-        .sidebar .nav-link i {
-            margin-left: 10px;
-            font-size: 1.1rem;
-            width: 20px;
-        }
-        
-        .sidebar-header {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            text-align: center;
-            color: white;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .sidebar-header h5 {
-            margin: 0;
-            font-weight: 700;
-        }
-        
-        .user-info {
-            background: rgba(255, 255, 255, 0.1);
-            margin: 15px;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            color: white;
-        }
-        
-        .guest-info {
-            background: rgba(255, 152, 0, 0.2);
-            border: 1px solid rgba(255, 152, 0, 0.3);
-        }
-        
-        .auth-buttons {
-            margin-top: 10px;
-        }
-        
-        .auth-buttons .btn {
-            margin: 2px;
-            padding: 5px 10px;
-            font-size: 12px;
-            border-radius: 15px;
-        }
-        
-        /* استایل‌های اضافی برای دکمه‌های navigation */
-        .sidebar button.nav-link {
-            background: none !important;
-            border: none !important;
-            display: block;
-            width: 100%;
-            text-align: right;
-            font-family: inherit;
-            color: inherit;
-        }
-        
-        .sidebar button.nav-link:focus {
-            outline: 2px solid rgba(255, 255, 255, 0.3);
-            outline-offset: 2px;
-        }
-        
-        .sidebar button.nav-link:hover:not(.disabled) {
-            background: rgba(255, 255, 255, 0.15) !important;
-            color: white;
-            transform: translateX(-5px);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-        
-        /* اطمینان از کار کردن onclick */
-        .sidebar .nav-link[onclick] {
-            cursor: pointer !important;
-            pointer-events: auto !important;
-        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     <script>
+    // Theme Management
+    function initTheme() {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        updateThemeButton(savedTheme);
+    }
+    
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeButton(newTheme);
+        
+        // Fix response viewer after theme change
+        setTimeout(() => {
+            fixResponseViewerColors();
+        }, 100);
+        
+        // Show notification
+        const message = newTheme === 'dark' ? 'حالت تاریک فعال شد 🌙' : 'حالت روشن فعال شد ☀️';
+        showAlert(message, 'success', 2000);
+    }
+    
+    function updateThemeButton(theme) {
+        const themeBtn = document.getElementById('theme-toggle');
+        if (themeBtn) {
+            const icon = themeBtn.querySelector('i');
+            if (theme === 'dark') {
+                icon.className = 'bi bi-sun-fill';
+                themeBtn.setAttribute('title', 'تغییر به حالت روشن');
+            } else {
+                icon.className = 'bi bi-moon-fill';
+                themeBtn.setAttribute('title', 'تغییر به حالت تاریک');
+            }
+        }
+    }
+    
+    // Function to force fix response viewer colors
+    function fixResponseViewerColors() {
+        console.log('🔧 Fixing response viewer colors...');
+        
+        // Wait a bit for theme to apply
+        setTimeout(() => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const isDark = currentTheme === 'dark';
+            
+            // Find all possible response viewer containers
+            const selectors = [
+                '.response-viewer',
+                '#response-container', 
+                '#response-body',
+                '#response-headers',
+                '.api-response',
+                '.response-content',
+                '.response-data'
+            ];
+            
+            selectors.forEach(selector => {
+                const containers = document.querySelectorAll(selector);
+                containers.forEach(container => {
+                    if (isDark) {
+                        // Dark mode colors
+                        container.style.background = '#1e2a4a !important';
+                        container.style.color = '#f1f5f9 !important';
+                        container.style.border = '2px solid #334155 !important';
+                    } else {
+                        // Light mode colors
+                        container.style.background = '#f8f9fa !important';
+                        container.style.color = '#212529 !important';
+                        container.style.border = '2px solid #dee2e6 !important';
+                    }
+                    
+                    // Fix all child elements
+                    const allElements = container.querySelectorAll('*');
+                    allElements.forEach(element => {
+                        // Skip buttons and badges
+                        if (!element.classList.contains('btn') && 
+                            !element.classList.contains('badge') &&
+                            !element.classList.contains('method-get') &&
+                            !element.classList.contains('method-post') &&
+                            !element.classList.contains('method-put') &&
+                            !element.classList.contains('method-delete') &&
+                            !element.classList.contains('method-patch')) {
+                            
+                            if (isDark) {
+                                element.style.color = '#f1f5f9 !important';
+                                // Fix backgrounds that might be white
+                                if (element.style.backgroundColor === 'white' || 
+                                    element.style.backgroundColor === '#ffffff' ||
+                                    element.classList.contains('bg-white') ||
+                                    element.classList.contains('bg-light')) {
+                                    element.style.backgroundColor = '#1e2a4a !important';
+                                }
+                            } else {
+                                element.style.color = '#212529 !important';
+                            }
+                        }
+                    });
+                });
+            });
+            
+            console.log(`✅ Fixed ${document.querySelectorAll(selectors.join(',')).length} response viewers`);
+        }, 200);
+    }
+    
+    // Initialize theme on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        initTheme();
+        
+        // Fix response viewers on load
+        setTimeout(() => {
+            fixResponseViewerColors();
+        }, 1000);
+        
+        // Also fix when new content is loaded (for AJAX responses)
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                    // Check if any response viewer was added
+                    const hasResponseViewer = Array.from(mutation.addedNodes).some(node => {
+                        if (node.nodeType === 1) { // Element node
+                            return node.matches('.response-viewer, #response-container, #response-body, .api-response') ||
+                                   node.querySelector('.response-viewer, #response-container, #response-body, .api-response');
+                        }
+                        return false;
+                    });
+                    
+                    if (hasResponseViewer) {
+                        console.log('🔍 New response viewer detected, fixing colors...');
+                        setTimeout(fixResponseViewerColors, 100);
+                    }
+                }
+            });
+        });
+        
+        // Start observing
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    });
+    
     // تابع showAlert - ساده و مستقیم
     function showAlert(message, type = 'info', duration = 5000) {
         console.log('🔥 showAlert called:', message, type, duration);
@@ -452,6 +1274,11 @@
             </a>
             
             <div class="navbar-nav ms-auto">
+                <!-- Theme Toggle Button -->
+                <button id="theme-toggle" class="theme-toggle btn" onclick="toggleTheme()" title="تغییر به حالت تاریک">
+                    <i class="bi bi-moon-fill"></i>
+                </button>
+                
                 {% if user.is_authenticated %}
                     <span class="navbar-text me-3">سلام {{ user.username }}</span>
                     <a class="nav-link" href="{% url 'logout' %}">

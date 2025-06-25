@@ -89,8 +89,8 @@
                                     </button>
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                </div>
+            </div>
                 {% endfor %}
             {% else %}
                 <p class="text-muted text-center">هیچ تاریخچه‌ای یافت نشد</p>
@@ -282,9 +282,9 @@ async function deleteHistoryItem(historyId) {
     try {
         if (!isAuthenticated) {
             showAlert('برای حذف درخواست باید وارد شوید', 'warning');
-            return;
-        }
-
+        return;
+    }
+    
         if (!confirm('آیا مطمئن هستید که می‌خواهید این درخواست را حذف کنید؟')) {
             return;
         }
@@ -305,7 +305,7 @@ async function deleteHistoryItem(historyId) {
             errorMessage = 'شما اجازه حذف این درخواست را ندارید';
         } else if (error.response?.data?.error) {
             errorMessage = error.response.data.error;
-        }
+    }
         showAlert(errorMessage, 'error');
     }
 }
@@ -317,10 +317,10 @@ async function saveResponse(historyId) {
             showAlert('برای ذخیره پاسخ باید وارد شوید', 'warning');
             return;
         }
-
-        const name = prompt('نام پاسخ را وارد کنید:');
-        if (!name) return;
-
+    
+    const name = prompt('نام پاسخ را وارد کنید:');
+    if (!name) return;
+    
         const response = await axios.post(`/request/api/history/${historyId}/save-response/`, {
             name: name
         }, {
@@ -369,9 +369,9 @@ async function loadHistory() {
                     <p class="text-muted">هنوز درخواستی ثبت نشده است</p>
                 </div>
             `;
-            return;
-        }
-
+        return;
+    }
+    
         const historyHTML = history.map(item => `
             <div class="card mb-3">
                 <div class="card-body">

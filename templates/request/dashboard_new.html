@@ -391,9 +391,9 @@
     <div id="response-section" class="response-section" style="display: none;">
         <div class="card">
             <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
+            <h5 class="mb-0">
                     <i class="bi bi-arrow-down-circle"></i> پاسخ API
-                </h5>
+            </h5>
                 <div class="btn-group">
                     <button class="btn btn-sm btn-light" id="maximize-response" title="بزرگنمایی">
                         <i class="bi bi-arrows-fullscreen"></i>
@@ -412,40 +412,40 @@
                     </button>
                     <button class="btn btn-sm btn-light" id="clear-response" title="پاک کردن">
                         <i class="bi bi-x"></i>
-                    </button>
+            </button>
                 </div>
-            </div>
-            
+        </div>
+        
             <div class="card-body">
                 <div class="response-stats mb-4">
                     <div class="row">
                         <div class="col-md-4">
-                            <div class="response-stat">
-                                <div class="fw-bold" id="response-status">-</div>
-                                <small class="text-muted">کد وضعیت</small>
-                            </div>
+            <div class="response-stat">
+                <div class="fw-bold" id="response-status">-</div>
+                <small class="text-muted">کد وضعیت</small>
+            </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="response-stat">
-                                <div class="fw-bold" id="response-time">-</div>
-                                <small class="text-muted">زمان پاسخ</small>
-                            </div>
+            <div class="response-stat">
+                <div class="fw-bold" id="response-time">-</div>
+                <small class="text-muted">زمان پاسخ</small>
+            </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="response-stat">
-                                <div class="fw-bold" id="response-size">-</div>
-                                <small class="text-muted">اندازه</small>
+            <div class="response-stat">
+                <div class="fw-bold" id="response-size">-</div>
+                <small class="text-muted">اندازه</small>
                             </div>
                         </div>
-                    </div>
-                </div>
-                
+            </div>
+        </div>
+        
                 <div class="mb-4">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <h6 class="mb-0"><i class="bi bi-tags"></i> هدرهای پاسخ</h6>
                         <button class="btn btn-sm btn-outline-secondary copy-headers" title="کپی هدرها">
                             <i class="bi bi-clipboard"></i>
-                        </button>
+                </button>
                     </div>
                     <pre id="response-headers-content" class="response-content bg-light p-3 rounded" style="max-height: 200px; overflow-y: auto;"></pre>
                 </div>
@@ -460,8 +460,8 @@
                             <button class="btn btn-sm btn-outline-secondary format-json" title="فرمت JSON">
                                 <i class="bi bi-braces"></i>
                             </button>
-                        </div>
-                    </div>
+                </div>
+            </div>
                     <pre id="response-body-content" class="response-content bg-light p-3 rounded" style="max-height: 400px; overflow-y: auto;"></pre>
                 </div>
             </div>
@@ -591,15 +591,15 @@ async function loadDashboardStats() {
         
         if (!isAuthenticated) {
             // کاربر لاگین نکرده
-            recentHistory.innerHTML = `
+                recentHistory.innerHTML = `
                 <div class="text-center p-3">
                     <i class="bi bi-lock h4 mb-3 d-block text-muted"></i>
                     <p class="text-muted mb-3">برای مشاهده تاریخچه لطفا وارد شوید</p>
                     <a href="{% url 'login' %}" class="btn btn-primary btn-sm">
                         <i class="bi bi-box-arrow-in-right"></i> ورود به حساب
-                    </a>
-                </div>
-            `;
+                        </a>
+                    </div>
+                `;
             return;
         }
 
@@ -612,24 +612,24 @@ async function loadDashboardStats() {
                 </div>
             `;
             return;
-        }
+            }
 
         // نمایش تاریخچه
-        recentHistory.innerHTML = stats.recent_requests.map(item => `
+            recentHistory.innerHTML = stats.recent_requests.map(item => `
             <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-                <div>
+                    <div>
                     <span class="badge ${getMethodBadgeClass(item.method)} me-2">${item.method}</span>
                     <small class="text-truncate" style="max-width: 200px; display: inline-block;" title="${item.url}">
                         ${item.request_name || item.url}
                     </small>
-                </div>
+                    </div>
                 <div>
                     <span class="badge ${item.status_code >= 200 && item.status_code < 300 ? 'bg-success' : 'bg-danger'}">
                         ${item.status_code || 'خطا'}
                     </span>
                 </div>
-            </div>
-        `).join('');
+                </div>
+            `).join('');
 
     } catch (error) {
         console.error('خطا در دریافت آمار:', error);
@@ -747,7 +747,7 @@ document.getElementById('copy-final-url').addEventListener('click', function() {
 document.addEventListener('click', function(e) {
     // فقط برای دکمه‌های خاص preventDefault کن، نه همه کلیک‌ها!
     if (e.target.closest('#fix-json') || e.target.closest('#create-json')) {
-        e.preventDefault(); // جلوگیری از ارسال فرم
+    e.preventDefault(); // جلوگیری از ارسال فرم
     }
     
     if (e.target.closest('#fix-json')) {

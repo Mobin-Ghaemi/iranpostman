@@ -1,0 +1,9 @@
+{
+  "disks": [
+
+    {
+      "name": "database",
+      "mountTo": "db"
+    }
+  ]
+}
