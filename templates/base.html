@@ -92,33 +92,160 @@
         
         /* Dark mode toggle button - بهبود شده */
         .theme-toggle {
-            background: rgba(255, 255, 255, 0.15);
-            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+            border: 2px solid rgba(255, 255, 255, 0.3);
             color: white;
-            border-radius: 50px;
-            padding: 10px 15px;
+            border-radius: 25px;
+            padding: 12px 18px;
             margin-left: 15px;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             cursor: pointer;
             font-size: 1.1rem;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(15px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+            min-width: 50px;
+            height: 46px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .theme-toggle::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.6s;
+        }
+        
+        .theme-toggle:hover::before {
+            left: 100%;
         }
         
         .theme-toggle:hover {
-            background: rgba(255, 255, 255, 0.25);
-            border-color: rgba(255, 255, 255, 0.4);
-            transform: scale(1.1);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.2) 100%);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: scale(1.1) translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .theme-toggle:active {
+            transform: scale(0.95) translateY(-1px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
         }
         
         .theme-toggle i {
-            font-size: 1.3rem;
-            transition: all 0.4s ease;
+            font-size: 1.4rem;
+            transition: all 0.5s ease;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+            z-index: 2;
+            position: relative;
         }
         
         .theme-toggle:hover i {
-            transform: rotate(180deg);
-            color: #fbbf24;
+            transform: rotate(180deg) scale(1.2);
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+        }
+        
+        /* حالت‌های مختلف دکمه */
+        .theme-toggle[data-theme="light"] {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+        
+        .theme-toggle[data-theme="light"]:hover {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .theme-toggle[data-theme="dark"] {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            border-color: rgba(251, 191, 36, 0.6);
+            color: #1a202c;
+        }
+        
+        .theme-toggle[data-theme="dark"]:hover {
+            background: linear-gradient(135deg, #f9a8d4 0%, #fbbf24 100%);
+            box-shadow: 0 8px 25px rgba(251, 191, 36, 0.5);
+        }
+        
+        .theme-toggle[data-theme="dark"] i {
+            color: #1a202c;
+            filter: drop-shadow(0 2px 4px rgba(26, 32, 44, 0.3));
+        }
+        
+        /* انیمیشن برای تغییر آیکون */
+        .theme-toggle .icon-wrapper {
+            position: relative;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .theme-toggle .bi-moon-fill,
+        .theme-toggle .bi-sun-fill {
+            position: absolute;
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        /* حالت انیمیشن برای تغییر */
+        .theme-toggle.changing {
+            animation: pulse 0.6s ease-in-out;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+        
+        /* Tooltip برای دکمه */
+        .theme-toggle::after {
+            content: attr(title);
+            position: absolute;
+            bottom: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .theme-toggle:hover::after {
+            opacity: 1;
+            bottom: -30px;
+        }
+        
+        /* موبایل responsive */
+        @media (max-width: 768px) {
+            .theme-toggle {
+                padding: 10px 14px;
+                margin-left: 10px;
+                min-width: 44px;
+                height: 40px;
+            }
+            
+            .theme-toggle i {
+                font-size: 1.2rem;
+            }
+            
+            .theme-toggle::after {
+                display: none; /* حذف tooltip در موبایل */
+            }
         }
         
         /* Cards and containers - بهبود شده */
@@ -1008,6 +1135,15 @@
     function toggleTheme() {
         const currentTheme = document.documentElement.getAttribute('data-theme');
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        const themeBtn = document.getElementById('theme-toggle');
+        
+        // Add changing animation
+        if (themeBtn) {
+            themeBtn.classList.add('changing');
+            setTimeout(() => {
+                themeBtn.classList.remove('changing');
+            }, 600);
+        }
         
         document.documentElement.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
@@ -1018,21 +1154,28 @@
             fixResponseViewerColors();
         }, 100);
         
-        // Show notification
-        const message = newTheme === 'dark' ? 'حالت تاریک فعال شد 🌙' : 'حالت روشن فعال شد ☀️';
-        showAlert(message, 'success', 2000);
+        // Show notification with better message
+        const messages = {
+            dark: 'حالت تاریک فعال شد 🌙✨',
+            light: 'حالت روشن فعال شد ☀️🌟'
+        };
+        showAlert(messages[newTheme], 'success', 2000);
     }
     
     function updateThemeButton(theme) {
         const themeBtn = document.getElementById('theme-toggle');
         if (themeBtn) {
             const icon = themeBtn.querySelector('i');
+            
+            // Update button data-theme attribute
+            themeBtn.setAttribute('data-theme', theme);
+            
             if (theme === 'dark') {
                 icon.className = 'bi bi-sun-fill';
-                themeBtn.setAttribute('title', 'تغییر به حالت روشن');
+                themeBtn.setAttribute('title', 'تغییر به حالت روشن ☀️');
             } else {
                 icon.className = 'bi bi-moon-fill';
-                themeBtn.setAttribute('title', 'تغییر به حالت تاریک');
+                themeBtn.setAttribute('title', 'تغییر به حالت تاریک 🌙');
             }
         }
     }
